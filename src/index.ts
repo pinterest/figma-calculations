@@ -3,11 +3,18 @@ import {
   AggregateCounts,
   LintCheckPercent,
   ProcessedNodeTree,
+  ProcessedPage,
+  ProcessedPageBreakdown,
+  ProcessedPercents,
+  ProcessedProjectBreakdown,
+  ProcessedTeamBreakdown,
+  TeamPages,
 } from "./models/stats";
 import FigmaDocumentParser from "./parser";
 
 import { makePercent } from "./utils/percent";
 import { getLintCheckPercent, getProcessedNodes } from "./utils/process";
+import { getFigmaPagesForTeam } from "./utils/teams";
 import { FigmaAPIHelper } from "./webapi";
 
 export class FigmaCalculator extends FigmaDocumentParser {
@@ -38,17 +45,44 @@ export class FigmaCalculator extends FigmaDocumentParser {
     }
   }
 
+  getFilesForTeams = getFigmaPagesForTeam;
+
   /**
    * Load all of the components from the library
    * @param teamId - the team to load components from
+   * @param {filterPrefixes} - an array of strings to throw out the components by
    */
-  async loadComponents(teamId: string): Promise<void> {
+  async loadComponents(
+    teamId: string,
+    opts?: { filterPrefixes: string[] }
+  ): Promise<void> {
     if (!this.apiToken) throw new Error("No Figma API token provided");
     const teamComponents = await FigmaAPIHelper.getTeamComponents(teamId);
+
     // variants live here
     const teamComponentSets = await FigmaAPIHelper.getTeamComponentSets(teamId);
 
     this.components = teamComponents.concat(teamComponentSets);
+
+    // throw out components that begin with a certain prefix
+    if (opts && opts.filterPrefixes) {
+      this.components = this.components.filter((comp) => {
+        // use the containing frame name instead if it's a variant
+        // Usually, these look like "name": "Count=5"
+        // Assuming we don't explicitly export components with an = signs in the name
+        if (comp.name.includes("=")) {
+          return opts.filterPrefixes.some((prefix) =>
+            comp.containing_frame.name
+              .toLowerCase()
+              .startsWith(prefix.toLowerCase())
+          );
+        } else {
+          return opts.filterPrefixes.some((prefix) =>
+            comp.name.toLowerCase().startsWith(prefix.toLowerCase())
+          );
+        }
+      });
+    }
   }
 
   /**
@@ -123,19 +157,17 @@ export class FigmaCalculator extends FigmaDocumentParser {
   }
 
   getAdoptionPercent(
-    processedNodes: ProcessedNodeTree[],
+    aggregates: AggregateCounts[],
     opts?: { includeMatchingText: boolean }
   ) {
-    // add up all the totalNodes
-
     const allTotals = {
       totalNodesOnPage: 0,
       totalNodesInLibrary: 0,
       totalMatchingText: 0,
     };
 
-    for (const tree of processedNodes) {
-      const { totalNodes, libraryNodes, checks } = tree.aggregateCounts;
+    for (const counts of aggregates) {
+      const { totalNodes, libraryNodes, checks } = counts;
 
       allTotals.totalNodesOnPage += totalNodes;
       allTotals.totalNodesInLibrary += libraryNodes;
@@ -153,17 +185,132 @@ export class FigmaCalculator extends FigmaDocumentParser {
     return adoptionPercent;
   }
 
-  getTextStylePercentage(
-    processedNodes: ProcessedNodeTree[]
-  ): LintCheckPercent {
+  /**
+   * Get the percents of text style usage in files
+   * @param processedNodes - array of nodes that have been processed
+   */
+  getTextStylePercentage(processedNodes: AggregateCounts[]): LintCheckPercent {
     return getLintCheckPercent("Text-Style", processedNodes);
   }
 
-  getFillStylePercent(processedNodes: ProcessedNodeTree[]) {
+  /**
+   * Get the percents of fill style usage in files
+   * @param processedNodes - array of nodes that have been processed
+   */
+  getFillStylePercent(processedNodes: AggregateCounts[]): LintCheckPercent {
     return getLintCheckPercent("Fill-Style", processedNodes);
   }
 
-  getBreakDownByTeams(processedNodes: ProcessedNodeTree[]) {
-    // do stuff
+  /**
+   * Get a breakdown of adoption percentages by team and project and how they rollup
+   * @param allPages - a set of page details and figma file details with processed nodes
+   */
+  getBreakDownByTeams(pages: ProcessedPage[]): {
+    projects: ProcessedProjectBreakdown;
+    teams: ProcessedTeamBreakdown;
+    pages: ProcessedPageBreakdown;
+    totals: ProcessedPercents;
+  } {
+    try {
+      const teams: TeamPages = {};
+      // build our team pages data structure which organizes into buckets
+      for (const page of pages) {
+        const projectName = page.file.projectName || "no-project";
+        const teamName = page.file.teamName || "no-team";
+        if (!teams[teamName]) {
+          teams[teamName] = {};
+        }
+
+        if (!teams[teamName][projectName]) {
+          teams[teamName][projectName] = { pages: [] };
+        }
+
+        teams[teamName][projectName].pages.push(page);
+      }
+
+      let allProcessedNodes: AggregateCounts[] = [];
+
+      const processedPageStats: ProcessedPageBreakdown = {};
+      const processedProjectStats: ProcessedProjectBreakdown = {};
+      const processedTeamStats: ProcessedTeamBreakdown = {};
+
+      for (const team of Object.keys(teams)) {
+        const projects = Object.keys(teams[team]);
+
+        let teamProcessedNodes: AggregateCounts[] = [];
+
+        for (const project of projects) {
+          const { pages } = teams[team][project];
+
+          const allProjectProcessedNodes = pages.map(
+            (page) => page.pageAggregates
+          );
+
+          // initialize the project and page stats structure
+          if (!processedPageStats[team]) {
+            processedPageStats[team] = {};
+            processedProjectStats[team] = {};
+          }
+
+          // set the page stats
+          processedPageStats[team][project] = {
+            pages: pages.map((page) => {
+              return {
+                adoptionPercent: this.getAdoptionPercent([page.pageAggregates]),
+                lintPercentages: {
+                  "Text-Style": this.getTextStylePercentage([
+                    page.pageAggregates,
+                  ]),
+                  "Fill-Style": this.getFillStylePercent([page.pageAggregates]),
+                },
+              };
+            }),
+          };
+
+          //  rollup the adoption percentages to project level stats
+          processedProjectStats[team][project] = {
+            adoptionPercent: this.getAdoptionPercent(allProjectProcessedNodes),
+            lintPercentages: {
+              "Text-Style": this.getTextStylePercentage(
+                allProjectProcessedNodes
+              ),
+              "Fill-Style": this.getFillStylePercent(allProjectProcessedNodes),
+            },
+          };
+
+          teamProcessedNodes = teamProcessedNodes.concat(
+            allProjectProcessedNodes
+          );
+        }
+
+        // rollup the adoption percentages to the team level stats
+        processedTeamStats[team] = {
+          adoptionPercent: this.getAdoptionPercent(teamProcessedNodes),
+          lintPercentages: {
+            "Text-Style": this.getTextStylePercentage(teamProcessedNodes),
+            "Fill-Style": this.getFillStylePercent(teamProcessedNodes),
+          },
+        };
+        allProcessedNodes = allProcessedNodes.concat(teamProcessedNodes);
+      }
+
+      // calculate a final adoption score with all of the nodes
+      const totals: ProcessedPercents = {
+        adoptionPercent: this.getAdoptionPercent(allProcessedNodes),
+        lintPercentages: {
+          "Text-Style": this.getTextStylePercentage(allProcessedNodes),
+          "Fill-Style": this.getFillStylePercent(allProcessedNodes),
+        },
+      };
+
+      return {
+        totals,
+        teams: processedTeamStats,
+        projects: processedProjectStats,
+        pages: processedPageStats,
+      };
+    } catch (ex) {
+      throw ex;
+    }
   }
 }

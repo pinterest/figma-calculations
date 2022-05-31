@@ -24,41 +24,54 @@ figmaCalculator.setAPIToken("FIGMA API TOKEN");
 
 const doWork = async () => {
   // optional: if not in figma plugin environment, load a file with this
-  await figmaCalculator.fetchCloudDocument("MY_FILE_ID");
+  const files = await figmaCalculator.getFilesForTeams([
+    "TEAM_ID_1",
+    "TEAM_ID_2",
+  ]);
 
-  // load up any style libraries
-  await figmaCalculator.loadComponents("TEAM ID");
-  await figmaCalculator.loadStyles("TEAM ID");
+  const allFileNodes = [];
+  for (const file of files) {
+    // optional: if not in figma plugin environment, load a file with this
+    await figmaCalculator.fetchCloudDocument("MY_FILE_ID");
 
-  const allProcessedNodes = [];
-  // run through all of the pages and process them
-  for (const page of figmaCalculator.getAllPages()) {
-    const processedNodes = figmaCalculator.processTree(page);
+    // load up any style libraries
+    await figmaCalculator.loadComponents("TEAM ID");
+    await figmaCalculator.loadStyles("TEAM ID");
 
-    // example: show the text linting results and suggestions
-    if (check.checkName === "Text-Style" && check.matchLevel === "Partial") {
-      console.log(check.suggestions);
+    const pageDetails = {
+      teamName: file.teamName,
+      projectName: file.projectName,
+      pageName: '',
+      documentName: '',
+      processedNodes: [],
+    };
+
+    // run through all of the pages and process them
+    for (const page of figmaCalculator.getAllPages()) {
+      const processedNodes = figmaCalculator.processTree(page);
+
+      // example: show the text linting results and suggestions
+      if (check.checkName === "Text-Style" && check.matchLevel === "Partial") {
+        console.log(check.suggestions);
+      }
+
+      pageDetails.pageName = file.pageName;
+      pageDetails.documentName = file.docuemntName;
+      pageDetails.processedNodes = processedNodes;
     }
-
-    allProcessedNodes.push(processedNodes);
-  }
+  } 
+    
+  const allProcessedNodes = allFileNodes.map(
+    (details) => details.processedNodes
+  );
 
   // some aggregate calculations
   const totalAdoption = figmaCalculator.getAdoptionPercent(allProcessedNodes);
   const textStylePercents =
     figmaCalculator.getTextStylePercentaget(allProcessedNodes);
-
-  // team level calculations
-  const teams = [
-    {
-      teamName: "SDSD",
-      pageName: "ABC",
-      documentName: "Document 1",
-      processedNodes: processedNodes,
-    },
-  ];
-
-  const teamBreakdown = figmaCalculator.calculateTeamPercents(teams);
+    
+    
+  const teamBreakdown = figmaCalculator.calculateTeamPercents(allFileNodes);
 };
 ```
 

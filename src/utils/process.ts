@@ -1,5 +1,6 @@
 import { FigmaTeamComponent, FigmaTeamStyle } from "../models/figma";
 import {
+  AggregateCounts,
   LintCheckName,
   ProcessedNode,
   ProcessedNodeTree,
@@ -141,7 +142,7 @@ export function getProcessedNodes(
 
 export function getLintCheckPercent(
   checkName: LintCheckName,
-  processedNodes: ProcessedNodeTree[]
+  aggregates: AggregateCounts[]
 ) {
   const allTotals = {
     totalNodes: 0,
@@ -149,8 +150,8 @@ export function getLintCheckPercent(
     totalPartialMatch: 0,
   };
 
-  for (const tree of processedNodes) {
-    const { checks } = tree.aggregateCounts;
+  for (const count of aggregates) {
+    const { checks } = count;
 
     if (checks[checkName]) {
       const results = checks[checkName]!;
@@ -163,8 +164,6 @@ export function getLintCheckPercent(
   return {
     checkName,
     full: makePercent(allTotals.totalFullMatch / allTotals.totalNodes),
-    partial: makePercent(
-      allTotals.totalPartialMatch / allTotals.totalNodes
-    ),
+    partial: makePercent(allTotals.totalPartialMatch / allTotals.totalNodes),
   };
 }

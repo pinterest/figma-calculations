@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "example": "tsc && node ./dist/examples/allfiles.js"
   },
   "author": "",
   "license": "ISC",
@@ -12,6 +13,7 @@
     "@types/figma": "^1.0.4",
     "@types/jsonpath": "^0.2.0",
     "axios": "^0.27.2",
+    "dayjs": "^1.11.2",
     "jsonpath": "^1.1.1"
   },
   "devDependencies": {

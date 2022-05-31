@@ -2,3 +2,5 @@ node_modules/
 dist/*
 
 tests/token.ts
+tests/token.js
+src/examples/token.ts

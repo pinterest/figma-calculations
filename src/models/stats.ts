@@ -1,3 +1,40 @@
+import { FigmaPartialFile } from "./figma";
+
+export type ProcessedPageBreakdown = {
+  [teamName: string]: {
+    [projectName: string]: {
+      pages: ProcessedPercents[];
+    };
+  };
+};
+
+export type ProcessedProjectBreakdown = {
+  [teamName: string]: {
+    [projectName: string]: ProcessedPercents;
+  };
+};
+
+export type ProcessedTeamBreakdown = {
+  [teamName: string]: ProcessedPercents;
+};
+
+export type ProcessedPage = {
+  file: FigmaPartialFile;
+  pageName: string;
+  pageAggregates: AggregateCounts;
+};
+
+export type ProcessedPercents = {
+  adoptionPercent: number;
+  lintPercentages: {
+    [checkName in LintCheckName]?: LintCheckPercent;
+  };
+};
+
+export type TeamPages = {
+  [projectName: string]: { [teamName: string]: { pages: ProcessedPage[] } };
+};
+
 export type LintCheckName = "Text-Style" | "Fill-Style" | "Stroke-Fill-Style";
 
 export type MatchLevel = "None" | "Partial" | "Full" | "Skip";

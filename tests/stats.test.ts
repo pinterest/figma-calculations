@@ -1,7 +1,7 @@
 import { FigmaCalculator } from "../src";
-import { ProcessedNodeTree } from "../src/models/stats";
+import { AggregateCounts, ProcessedNodeTree } from "../src/models/stats";
 
-import { FIGMA_TOKEN } from "./token";
+import { FIGMA_TOKEN } from "../src/examples/token";
 
 jest.setTimeout(300000);
 
@@ -45,7 +45,7 @@ describe("Do Test File Cases Pass?", () => {
     await figmaCalculator.loadComponents(TEAM_ID);
     await figmaCalculator.loadStyles(TEAM_ID);
 
-    const frameResults: { [pageName: string]: ProcessedNodeTree[] } = {};
+    const frameResults: { [pageName: string]: AggregateCounts[] } = {};
     for (const page of figmaCalculator.getAllPages()) {
       const frameNodes = FigmaCalculator.FindChildren(
         page,
@@ -57,7 +57,7 @@ describe("Do Test File Cases Pass?", () => {
       for (const node of frameNodes) {
         const processedNodes = figmaCalculator.processTree(node);
 
-        frameResults[page.name].push(processedNodes);
+        frameResults[page.name].push(processedNodes.aggregateCounts);
       }
     }
 
@@ -74,8 +74,8 @@ describe("Do Test File Cases Pass?", () => {
     ).toBe(100);
   });
 
-  it("Pass iOS and Web Handoff Text 100%", () => {
-    const frameResults: { [pageName: string]: ProcessedNodeTree[] } = {};
+  it("Pass iOS and Web Handoff 100%", () => {
+    const frameResults: { [pageName: string]: AggregateCounts[] } = {};
     for (const page of figmaCalculator.getAllPages()) {
       const frameNodes = FigmaCalculator.FindChildren(
         page,
@@ -87,7 +87,7 @@ describe("Do Test File Cases Pass?", () => {
       for (const node of frameNodes) {
         const processedNodes = figmaCalculator.processTree(node);
 
-        frameResults[page.name].push(processedNodes);
+        frameResults[page.name].push(processedNodes.aggregateCounts);
       }
     }
 
@@ -105,7 +105,7 @@ describe("Do Test File Cases Pass?", () => {
   });
 
   it("Pass Hidden File Test to be 100%", () => {
-    const frameResults: { [pageName: string]: ProcessedNodeTree[] } = {};
+    const frameResults: { [pageName: string]: AggregateCounts[] } = {};
     for (const page of figmaCalculator.getAllPages()) {
       const frameNodes = FigmaCalculator.FindChildren(
         page,
@@ -117,7 +117,7 @@ describe("Do Test File Cases Pass?", () => {
       for (const node of frameNodes) {
         const processedNodes = figmaCalculator.processTree(node);
 
-        frameResults[page.name].push(processedNodes);
+        frameResults[page.name].push(processedNodes.aggregateCounts);
       }
     }
 
@@ -132,7 +132,7 @@ describe("Do Test File Cases Pass?", () => {
   });
 
   it("Pass iOS and Text Lint 100%", () => {
-    const frameResults: { [pageName: string]: ProcessedNodeTree[] } = {};
+    const frameResults: { [pageName: string]: AggregateCounts[] } = {};
     for (const page of figmaCalculator.getAllPages()) {
       const frameNodes = FigmaCalculator.FindChildren(
         page,
@@ -144,7 +144,7 @@ describe("Do Test File Cases Pass?", () => {
       for (const node of frameNodes) {
         const processedNodes = figmaCalculator.processTree(node);
 
-        frameResults[page.name].push(processedNodes);
+        frameResults[page.name].push(processedNodes.aggregateCounts);
       }
     }
 
