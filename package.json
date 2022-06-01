@@ -1,8 +1,9 @@
 {
-  "name": "figma-unified",
-  "version": "1.0.0",
+  "name": "figma-calculations",
+  "version": "0.0.1-alpha",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "jest",
     "example": "tsc && node ./dist/examples/allfiles.js"
