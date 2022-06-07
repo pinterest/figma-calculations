@@ -3,7 +3,6 @@ import dayjs from "dayjs";
 import { FigmaPartialFile } from "../models/figma";
 
 import { FigmaAPIHelper } from "../webapi";
-import { getLintCheckPercent } from "./process";
 
 /**
  * Get all the figma file metadata across entire organization for given teams
@@ -26,7 +25,9 @@ export async function getFigmaPagesForTeam(
       const newFiles = await FigmaAPIHelper.getProjectFiles(proj.id);
       for (const file of newFiles) {
         // merge the team and project names onto the file metadata
-        files.push({ ...file, teamName: team.name, projectName: proj.name });
+        files.push(
+          Object.assign(file, { teamName: team.name, projectName: proj.name })
+        );
       }
     }
   }

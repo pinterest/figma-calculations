@@ -38,12 +38,16 @@ export type TeamPages = {
 export type LintCheckName = "Text-Style" | "Fill-Style" | "Stroke-Fill-Style";
 
 export type MatchLevel = "None" | "Partial" | "Full" | "Skip";
-export type LintSuggestion = { message: string; styleId: string };
+export type LintSuggestion = {
+  message: string;
+  styleKey: string;
+};
 
 export type LintCheck = {
   checkName: LintCheckName;
   matchLevel: MatchLevel;
   suggestions: LintSuggestion[];
+  exactMatch?: { key: string };
 };
 export type ProcessedNode = {
   id: string;

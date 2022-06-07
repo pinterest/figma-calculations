@@ -72,7 +72,7 @@ export function getProcessedNodes(
       return false;
     }
 
-    // get all the sublayers of an instance node, and skip them
+    // get all the sublayers of an instance that's part of a library, and skip it
     if (node.type === "INSTANCE" && targetInstanceNodes[node.name]) {
       totalNodes -= 1;
 

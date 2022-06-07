@@ -99,9 +99,17 @@ export class FigmaCalculator extends FigmaDocumentParser {
    * @param rootNode - Can pass any Figma Node with children
    * @param useEmitter - Streams the results of the process to the emitter in intervals
    */
-  processTree(rootNode: BaseNode): ProcessedNodeTree {
+  processTree(
+    rootNode: BaseNode,
+    components?: FigmaTeamComponent[],
+    allStyles?: FigmaTeamStyle[]
+  ): ProcessedNodeTree {
     const { allHiddenNodes, libraryNodes, totalNodes, processedNodes } =
-      getProcessedNodes(rootNode, this.components, this.allStyles);
+      getProcessedNodes(
+        rootNode,
+        components || this.components,
+        allStyles || this.allStyles
+      );
 
     const aggregates: AggregateCounts = {
       totalNodes,

@@ -8,7 +8,13 @@ import {
   StyleBucket,
 } from "../models/figma";
 
-import { LintCheckName, LintCheck, MatchLevel } from "../models/stats";
+import {
+  LintCheckName,
+  LintCheck,
+  MatchLevel,
+  LintSuggestion,
+} from "../models/stats";
+import { isExactStyleMatch } from "./isExactStyleMatch";
 
 export function handleCountsIncrement(
   name: string,
@@ -33,43 +39,10 @@ export function generateStyleBucket(styles: FigmaTeamStyle[]): StyleBucket {
     }
 
     styleBuckets[style.style_type][style.nodeDetails.id] = style;
+
+    // styleBuckets[style.style_type][style.key] = style;
   }
   return styleBuckets;
-}
-function isExactStyleMatch(
-  styleType: FigmaStyleType | "STROKE",
-  styleBucket: StyleBucket,
-  targetNode: SceneNode
-): boolean {
-  if (!(targetNode as any).styles) {
-    return false;
-  }
-  let styleId: string | symbol = "";
-  // check corresponding Id props to verify exact matches
-  if (styleType === "FILL") {
-    styleId = (targetNode as any).styles["fill"];
-  }
-
-  // may be error prone because fill style could correspond to fill rather than stroke
-  if (styleType === "STROKE") {
-    // some hacky stuff because Figma doesn't differentiate stroke as a Fill Style
-    styleId = (targetNode as any).styles["fill"];
-    styleType = "FILL";
-  }
-
-  if (styleType === "TEXT") {
-    styleId = (targetNode as any).styles["text"];
-  }
-
-  // if a predefined style exists it's an exact match
-  if (styleId) {
-    if (typeof styleId === "string") {
-      // get the key from the style ID
-      return true;
-    }
-  }
-
-  return false;
 }
 
 /**
@@ -97,30 +70,26 @@ function getPartialStyleMatches(
   propertiesToCheck: PropertyCheck[],
   targetNode: SceneNode
 ): LintCheck {
-  const suggestions: { message: string; styleId: string }[] = [];
+  const suggestions: LintSuggestion[] = [];
   const styles = stylesBucket[styleType];
 
   for (const property of propertiesToCheck) {
     // do work here to check individual property matches
     const targetValue = jp.value(targetNode, property.nodePath);
-    //console.log(targetNode);
-    //console.log(property.nodePath);
-    //console.log(targetValue);
+
     if (!targetValue) continue;
 
-    //console.log(property.nodePath, targetValue);
     // check against all of styles, and that field in a style
 
     for (const styleId of Object.keys(styles)) {
       const styleNode = styles[styleId];
-      //console.log(styleNode);
+
       const styleValue = jp.value(styleNode.nodeDetails, property.stylePath);
-      //console.log(styleValue);
-      //console.log(property.stylePath, styleValue);
 
       // skip it
       if (!styleValue) continue;
 
+      // sometimes it may not be a string, and is a figma partial
       if (typeof styleValue === "string") {
         if (property.matchType == "exact") {
           if (targetValue == styleValue) {
@@ -128,7 +97,7 @@ function getPartialStyleMatches(
               message: `Possible Gestalt ${
                 property.name || checkName
               } match with name: ${styleNode.name}`,
-              styleId: styleNode.node_id,
+              styleKey: styleNode.key,
             });
           }
         } else {
@@ -137,7 +106,7 @@ function getPartialStyleMatches(
               message: `Possible Gestalt ${
                 property.name || checkName
               } match with name: ${styleNode.name}`,
-              styleId: styleNode.node_id,
+              styleKey: styleNode.key,
             });
           }
         }
@@ -150,7 +119,7 @@ function getPartialStyleMatches(
               message: `Possible Gestalt ${
                 property.name || checkName
               } match with name: ${styleNode.name}`,
-              styleId: styleNode.node_id,
+              styleKey: styleNode.key,
             });
           }
         } else {
@@ -184,8 +153,15 @@ export const runSimilarityChecks = (
       return { checkName, matchLevel: "Skip", suggestions: [] };
 
     // check if style is exact match
-    if (isExactStyleMatch("TEXT", styleBucket, targetNode))
-      return { checkName, matchLevel: "Full", suggestions: [] };
+    const exactMatch = isExactStyleMatch("TEXT", styleBucket, targetNode);
+
+    if (exactMatch)
+      return {
+        checkName,
+        matchLevel: "Full",
+        suggestions: [],
+        exactMatch: { key: exactMatch.key },
+      };
 
     const { matchLevel, suggestions } = getPartialStyleMatches(
       checkName,
@@ -218,15 +194,23 @@ export const runSimilarityChecks = (
     // check if correct Node Type
     if (
       !isNodeOfTypeAndVisible(
-        ["TEXT", "RECTANGLE", "ELLIPSE", "POLYGON"],
+        ["TEXT", "RECTANGLE", "ELLIPSE", "POLYGON", "INSTANCE"],
         targetNode
       )
     )
       return { checkName, matchLevel: "Skip", suggestions: [] };
 
     // check if style is exact match
-    if (isExactStyleMatch("FILL", styleBucket, targetNode))
-      return { checkName, matchLevel: "Full", suggestions: [] };
+    // check if style is exact match
+    const exactMatch = isExactStyleMatch("FILL", styleBucket, targetNode);
+
+    if (exactMatch)
+      return {
+        checkName,
+        matchLevel: "Full",
+        suggestions: [],
+        exactMatch: { key: exactMatch.key },
+      };
 
     // ignore fills if they have images
     const fillTypes = jp.query(targetNode, "$.fills[*].type");
@@ -289,8 +273,15 @@ export const runSimilarityChecks = (
     }
 
     // check if style is exact match
-    if (isExactStyleMatch("STROKE", styleBucket, targetNode))
-      return { checkName, matchLevel: "Full", suggestions: [] };
+    const exactMatch = isExactStyleMatch("STROKE", styleBucket, targetNode);
+
+    if (exactMatch)
+      return {
+        checkName,
+        matchLevel: "Full",
+        suggestions: [],
+        exactMatch: { key: exactMatch.key },
+      };
 
     const { matchLevel, suggestions } = getPartialStyleMatches(
       checkName,
