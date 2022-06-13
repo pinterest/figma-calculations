@@ -62,7 +62,7 @@ export interface FigmaFile {
   components: Map<string, ComponentNode>;
   componentSets: Map<string, ComponentNode>;
   schemaVersion: 0;
-  styles: Map<string, FigmaTeamStyle>;
+  styles: { [style_node_id: string]: FigmaTeamStyle };
   mainFileKey: string;
 }
 

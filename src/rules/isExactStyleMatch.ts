@@ -25,8 +25,8 @@ function isExactStyleMatchInFigma(
   }
 
   if (styleType === "STROKE") {
-    // some hacky stuff because Figma doesn't differentiate into a Fill Style
     styleId = (targetNode as RectangleNode).strokeStyleId;
+    // Figma doesn't differentiate stroke as a Fill Style
     styleType = "FILL";
   }
 
@@ -39,10 +39,10 @@ function isExactStyleMatchInFigma(
   // check if the style exists in our map, else check property by property
   if (styleId && styleId !== figma.mixed) {
     if (typeof styleId === "string") {
-      // get the key from the style ID
-      const styleKey = styleId.split(":")[1]?.split(",")[0];
+      // get the key from the style node ID
+      const styleNodeId = styleId.split(":")[1]?.split(",")[1];
 
-      const existingStyle = styles[styleKey];
+      const existingStyle = styles[styleNodeId];
       if (existingStyle) {
         return existingStyle;
       }
@@ -60,32 +60,32 @@ function isExactStyleMatchFromCloud(
   if (!(targetNode as any).styles) {
     return false;
   }
-  let styleId: string | symbol = "";
+
+  let styleKey: string | symbol = "";
   // check corresponding Id props to verify exact matches
   if (styleType === "FILL") {
-    styleId = (targetNode as any).styles["fill"];
+    styleKey = (targetNode as any).styles["fill"];
   }
 
   // may be error prone because fill style could correspond to fill rather than stroke
   if (styleType === "STROKE") {
     // some hacky stuff because Figma doesn't differentiate stroke as a Fill Style
-    styleId = (targetNode as any).styles["fill"];
+    styleKey = (targetNode as any).styles["fill"];
     styleType = "FILL";
   }
 
   if (styleType === "TEXT") {
-    styleId = (targetNode as any).styles["text"];
+    styleKey = (targetNode as any).styles["text"];
   }
 
   // if a predefined style exists it's an exact match
-  if (styleId) {
-    if (typeof styleId === "string") {
-      if (styleBucket[styleType][styleId]) {
-        // get the key from the style ID
-        return styleBucket[styleType][styleId];
+  if (styleKey) {
+    if (typeof styleKey === "string") {
+      if (styleBucket[styleType][styleKey]) {
+        return styleBucket[styleType][styleKey];
       }
     }
   }
 
-  return false;
+  return undefined;
 }

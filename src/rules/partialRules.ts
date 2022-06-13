@@ -38,9 +38,7 @@ export function generateStyleBucket(styles: FigmaTeamStyle[]): StyleBucket {
       styleBuckets[style.style_type] = {};
     }
 
-    styleBuckets[style.style_type][style.nodeDetails.id] = style;
-
-    // styleBuckets[style.style_type][style.key] = style;
+    styleBuckets[style.style_type][style.key] = style;
   }
   return styleBuckets;
 }
@@ -88,7 +86,6 @@ function getPartialStyleMatches(
 
       // skip it
       if (!styleValue) continue;
-
       // sometimes it may not be a string, and is a figma partial
       if (typeof styleValue === "string") {
         if (property.matchType == "exact") {

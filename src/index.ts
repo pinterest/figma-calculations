@@ -37,7 +37,20 @@ export class FigmaCalculator extends FigmaDocumentParser {
   }
 
   async fetchCloudDocument(fileKey: string): Promise<void> {
-    const { document } = await FigmaAPIHelper.getFile(fileKey);
+    const { document, styles } = await FigmaAPIHelper.getFile(fileKey);
+
+    // look at the children and fix the styles to use the actual style key instead of node key
+    FigmaCalculator.FindAll(document, (node) => {
+      const cloudNode = node as any;
+      if (!cloudNode.styles) return false;
+      for (const key in cloudNode.styles) {
+        const styleNodeId: string = cloudNode.styles[key];
+        // replace the style node id with the actual style key returned in the styles map
+        cloudNode.styles[key] = styles[styleNodeId]?.key;
+      }
+      return false;
+    });
+
     this.setDocumentNode(document);
 
     if (!this.getDocumentNode()) {

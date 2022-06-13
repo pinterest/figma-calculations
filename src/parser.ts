@@ -70,11 +70,13 @@ export default class FigmaDocumentParser {
    * @returns
    */
   static FindChildren(
-    node: SceneNode | FrameNode | PageNode,
+    node: SceneNode | any,
     matchFunction: (child: SceneNode) => boolean
   ) {
-    const matches = [];
-    for (const child of (node as any).children) {
+    const matches: SceneNode[] = [];
+    if (!node.children) return matches;
+    if (node.children.length === 0) return matches;
+    for (const child of node.children) {
       const match = matchFunction(child);
       if (match) matches.push(child);
     }
