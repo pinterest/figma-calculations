@@ -18,8 +18,13 @@ const doWork = async () => {
   ]);
 
   // load up any style libraries
-  await figmaCalculator.loadComponents(STYLE_TEAM_ID);
-  await figmaCalculator.loadStyles(STYLE_TEAM_ID);
+  const comps = await figmaCalculator.loadComponents(STYLE_TEAM_ID);
+  const styles = await figmaCalculator.loadStyles(STYLE_TEAM_ID);
+
+  const compsj = JSON.stringify(comps, null, 2);
+  const stylesj = JSON.stringify(styles, null, 2);
+  fs.writeFileSync("../comps.json", compsj);
+  fs.writeFileSync("../styles.json", stylesj);
 
   const allPages: ProcessedPage[] = [];
 

@@ -143,7 +143,6 @@ describe("Do Test File Cases Pass?", () => {
 
       for (const node of frameNodes) {
         const processedNodes = figmaCalculator.processTree(node);
-
         frameResults[page.name].push(processedNodes.aggregateCounts);
       }
     }

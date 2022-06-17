@@ -3,13 +3,12 @@ import {
   AggregateCounts,
   LintCheckName,
   ProcessedNode,
-  ProcessedNodeTree,
 } from "../models/stats";
 import FigmaDocumentParser from "../parser";
 import {
   generateStyleBucket,
   runSimilarityChecks,
-} from "../rules/partialRules";
+} from "../rules";
 import { makePercent } from "./percent";
 
 // returns array of nodes that are in a hidden layer tree

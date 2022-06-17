@@ -45,8 +45,11 @@ export class FigmaCalculator extends FigmaDocumentParser {
       if (!cloudNode.styles) return false;
       for (const key in cloudNode.styles) {
         const styleNodeId: string = cloudNode.styles[key];
-        // replace the style node id with the actual style key returned in the styles map
-        cloudNode.styles[key] = styles[styleNodeId]?.key;
+
+        if (cloudNode.styles[key]) {
+          // replace the style node id with the actual style key returned in the styles map
+          cloudNode.styles[key] = styles[styleNodeId]?.key;
+        }
       }
       return false;
     });
@@ -68,7 +71,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
   async loadComponents(
     teamId: string,
     opts?: { filterPrefixes: string[] }
-  ): Promise<void> {
+  ): Promise<FigmaTeamComponent[]> {
     if (!this.apiToken) throw new Error("No Figma API token provided");
     const teamComponents = await FigmaAPIHelper.getTeamComponents(teamId);
 
@@ -96,15 +99,18 @@ export class FigmaCalculator extends FigmaDocumentParser {
         }
       });
     }
+
+    return this.components;
   }
 
   /**
    * Load all of the valid styles from your library
    *@param teamId - the team id to load styles from
    */
-  async loadStyles(teamId: string): Promise<void> {
+  async loadStyles(teamId: string): Promise<FigmaTeamStyle[]> {
     if (!this.apiToken) throw new Error("No Figma API token provided");
     this.allStyles = await FigmaAPIHelper.getTeamStyles(teamId);
+    return this.allStyles;
   }
 
   /**
