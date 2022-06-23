@@ -84,6 +84,4 @@ export type ProcessedNodeTree = {
     name: string;
   };
   aggregateCounts: AggregateCounts;
-
-  nodes: ProcessedNode[];
 };

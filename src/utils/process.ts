@@ -1,14 +1,7 @@
 import { FigmaTeamComponent, FigmaTeamStyle } from "../models/figma";
-import {
-  AggregateCounts,
-  LintCheckName,
-  ProcessedNode,
-} from "../models/stats";
+import { AggregateCounts, LintCheckName, ProcessedNode } from "../models/stats";
 import FigmaDocumentParser from "../parser";
-import {
-  generateStyleBucket,
-  runSimilarityChecks,
-} from "../rules";
+import { generateStyleBucket, runSimilarityChecks } from "../rules";
 import { makePercent } from "./percent";
 
 // returns array of nodes that are in a hidden layer tree
@@ -25,7 +18,8 @@ export const getHiddenNodes = (
 export function getProcessedNodes(
   rootNode: BaseNode,
   components: FigmaTeamComponent[],
-  allStyles: FigmaTeamStyle[]
+  allStyles: FigmaTeamStyle[],
+  onProcessNode?: (node: ProcessedNode) => void
 ) {
   const targetInstanceNodes: { [key: string]: FigmaTeamComponent } = {};
   for (const comp of components as FigmaTeamComponent[]) {
@@ -49,6 +43,14 @@ export function getProcessedNodes(
 
   let nodesToSkip: string[] = [];
   let allHiddenNodes: string[] = [];
+
+  const addToProcessedNodes = (node: ProcessedNode) => {
+    if (onProcessNode) {
+      onProcessNode(node);
+    }
+
+    processedNodes.push(node);
+  };
 
   FigmaDocumentParser.FindAll(rootNode, (node: SceneNode) => {
     // returns array of nodes that are in a hidden layer tree
@@ -75,7 +77,7 @@ export function getProcessedNodes(
     if (node.type === "INSTANCE" && targetInstanceNodes[node.name]) {
       totalNodes -= 1;
 
-      processedNodes.push({
+      addToProcessedNodes({
         id: node.id,
         name: node.name,
         type: node.type,
@@ -112,7 +114,7 @@ export function getProcessedNodes(
 
     const result = runSimilarityChecks(styleBuckets, node);
 
-    processedNodes.push({
+    addToProcessedNodes({
       id: node.id,
       name: node.name,
       type: node.type,
@@ -126,7 +128,7 @@ export function getProcessedNodes(
 
   // throw in the subnodes of the instance nodes
   for (const node of libraryNodes) {
-    processedNodes.push({
+    addToProcessedNodes({
       id: node.id,
       name: node.name,
       type: node.type,

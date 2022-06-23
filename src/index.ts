@@ -2,6 +2,7 @@ import { FigmaTeamComponent, FigmaTeamStyle } from "./models/figma";
 import {
   AggregateCounts,
   LintCheckPercent,
+  ProcessedNode,
   ProcessedNodeTree,
   ProcessedPage,
   ProcessedPageBreakdown,
@@ -121,13 +122,15 @@ export class FigmaCalculator extends FigmaDocumentParser {
   processTree(
     rootNode: BaseNode,
     components?: FigmaTeamComponent[],
-    allStyles?: FigmaTeamStyle[]
+    allStyles?: FigmaTeamStyle[],
+    onProcessNode?: (node: ProcessedNode) => void
   ): ProcessedNodeTree {
     const { allHiddenNodes, libraryNodes, totalNodes, processedNodes } =
       getProcessedNodes(
         rootNode,
         components || this.components,
-        allStyles || this.allStyles
+        allStyles || this.allStyles,
+        onProcessNode
       );
 
     const aggregates: AggregateCounts = {
@@ -179,7 +182,6 @@ export class FigmaCalculator extends FigmaDocumentParser {
         name: rootNode.name,
       },
       aggregateCounts: aggregates,
-      nodes: processedNodes,
     };
   }
 
