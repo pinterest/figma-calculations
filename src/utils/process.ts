@@ -1,14 +1,7 @@
 import { FigmaTeamComponent, FigmaTeamStyle } from "../models/figma";
-import {
-  AggregateCounts,
-  LintCheckName,
-  ProcessedNode,
-} from "../models/stats";
+import { AggregateCounts, LintCheckName, ProcessedNode } from "../models/stats";
 import FigmaDocumentParser from "../parser";
-import {
-  generateStyleBucket,
-  runSimilarityChecks,
-} from "../rules";
+import { generateStyleBucket, runSimilarityChecks } from "../rules";
 import { makePercent } from "./percent";
 
 // returns array of nodes that are in a hidden layer tree
@@ -50,25 +43,26 @@ export function getProcessedNodes(
   let nodesToSkip: string[] = [];
   let allHiddenNodes: string[] = [];
 
-  FigmaDocumentParser.FindAll(rootNode, (node: SceneNode) => {
-    // returns array of nodes that are in a hidden layer tree
-
+  // iterate through generator
+  // iterate through all the nodes
+  for (const node of FigmaDocumentParser.ForEach(rootNode)) {
+    if (!node) continue;
     if (node.visible === false) {
       const hiddenNodes = getHiddenNodes(node).map((node) => node.id);
       allHiddenNodes = allHiddenNodes.concat(hiddenNodes);
-      return false;
+      continue;
     }
 
     // if the node is hidden, then don't include it in our counts
     if (allHiddenNodes.includes(node.id)) {
-      return false;
+      continue;
     }
 
     totalNodes += 1;
 
     // exclude any instance nodes
     if (nodesToSkip.includes(node.id)) {
-      return false;
+      continue;
     }
 
     // get all the sublayers of an instance that's part of a library, and skip it
@@ -107,7 +101,7 @@ export function getProcessedNodes(
       // all of the visible sub nodes of an instance node
       libraryNodes = libraryNodes.concat(visibleNodes);
 
-      return false;
+      continue;
     }
 
     const result = runSimilarityChecks(styleBuckets, node);
@@ -120,9 +114,7 @@ export function getProcessedNodes(
       belongsToLibraryComponent: false,
       similarComponents: [],
     });
-
-    return true;
-  });
+  }
 
   // throw in the subnodes of the instance nodes
   for (const node of libraryNodes) {

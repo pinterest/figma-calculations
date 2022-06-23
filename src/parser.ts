@@ -24,6 +24,29 @@ export default class FigmaDocumentParser {
   }
 
   /**
+   * Runs on a set of matching nodes
+   * @param node - Can pass any Figma Node with children
+   * @returns
+   */
+  static *ForEach(
+    node: any,
+    _isFirstElement = true
+  ): Generator<SceneNode | undefined> {
+    // skip the first element in the sequence and only focus on the children
+    if (!_isFirstElement) {
+      yield node;
+    } else {
+      yield undefined;
+    }
+    let children = (node as GroupNode).children;
+    if (children) {
+      for (let child of children) {
+        yield* this.ForEach(child, false);
+      }
+    }
+  }
+
+  /**
    * Runs and returns an array of matching nodes that pass the match function
    * @param node - Can pass any Figma Node with children
    * @param matchFunction
