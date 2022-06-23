@@ -15,11 +15,18 @@ export const getHiddenNodes = (
   return [topLevelHiddenNode].concat(childrenNodes);
 };
 
-export function getProcessedNodes(
+export type ProcessedNodeAggregate = {
+  isLastElement: boolean;
+  numLibraryNodes: number;
+  numTotalNodes: number;
+  numHiddenNodes: number;
+};
+
+export function* getProcessedNodes(
   rootNode: BaseNode,
   components: FigmaTeamComponent[],
   allStyles: FigmaTeamStyle[]
-) {
+): Generator<ProcessedNode | ProcessedNodeAggregate> {
   const targetInstanceNodes: { [key: string]: FigmaTeamComponent } = {};
   for (const comp of components as FigmaTeamComponent[]) {
     // use the containing frame name instead if it's a variant
@@ -34,9 +41,7 @@ export function getProcessedNodes(
 
   const styleBuckets = generateStyleBucket(allStyles);
 
-  let totalNodes = 0;
-
-  const processedNodes: ProcessedNode[] = [];
+  let numTotalNodes = 0;
 
   let libraryNodes: SceneNode[] = [];
 
@@ -58,7 +63,7 @@ export function getProcessedNodes(
       continue;
     }
 
-    totalNodes += 1;
+    numTotalNodes += 1;
 
     // exclude any instance nodes
     if (nodesToSkip.includes(node.id)) {
@@ -67,16 +72,16 @@ export function getProcessedNodes(
 
     // get all the sublayers of an instance that's part of a library, and skip it
     if (node.type === "INSTANCE" && targetInstanceNodes[node.name]) {
-      totalNodes -= 1;
+      numTotalNodes -= 1;
 
-      processedNodes.push({
+      yield {
         id: node.id,
         name: node.name,
         type: node.type,
         lintChecks: [],
         belongsToLibraryComponent: true,
         similarComponents: [],
-      });
+      };
 
       const subNodes = FigmaDocumentParser.FindAll(node, () => true);
 
@@ -106,29 +111,34 @@ export function getProcessedNodes(
 
     const result = runSimilarityChecks(styleBuckets, node);
 
-    processedNodes.push({
+    yield {
       id: node.id,
       name: node.name,
       type: node.type,
       lintChecks: result,
       belongsToLibraryComponent: false,
       similarComponents: [],
-    });
+    };
   }
 
   // throw in the subnodes of the instance nodes
   for (const node of libraryNodes) {
-    processedNodes.push({
+    yield {
       id: node.id,
       name: node.name,
       type: node.type,
       lintChecks: [],
       belongsToLibraryComponent: true,
       similarComponents: [],
-    });
+    };
   }
 
-  return { processedNodes, libraryNodes, totalNodes, allHiddenNodes };
+  yield {
+    isLastElement: true,
+    numTotalNodes,
+    numLibraryNodes: libraryNodes.length,
+    numHiddenNodes: allHiddenNodes.length,
+  };
 }
 
 export function getLintCheckPercent(

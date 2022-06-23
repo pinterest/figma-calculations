@@ -2,6 +2,7 @@ import { FigmaTeamComponent, FigmaTeamStyle } from "./models/figma";
 import {
   AggregateCounts,
   LintCheckPercent,
+  ProcessedNode,
   ProcessedNodeTree,
   ProcessedPage,
   ProcessedPageBreakdown,
@@ -13,7 +14,11 @@ import {
 import FigmaDocumentParser from "./parser";
 
 import { makePercent } from "./utils/percent";
-import { getLintCheckPercent, getProcessedNodes } from "./utils/process";
+import {
+  getLintCheckPercent,
+  getProcessedNodes,
+  ProcessedNodeAggregate,
+} from "./utils/process";
 import { getFigmaPagesForTeam } from "./utils/teams";
 import { FigmaAPIHelper } from "./webapi";
 
@@ -123,24 +128,33 @@ export class FigmaCalculator extends FigmaDocumentParser {
     components?: FigmaTeamComponent[],
     allStyles?: FigmaTeamStyle[]
   ): ProcessedNodeTree {
-    const { allHiddenNodes, libraryNodes, totalNodes, processedNodes } =
-      getProcessedNodes(
-        rootNode,
-        components || this.components,
-        allStyles || this.allStyles
-      );
+    const processedNodes = getProcessedNodes(
+      rootNode,
+      components || this.components,
+      allStyles || this.allStyles
+    );
 
     const aggregates: AggregateCounts = {
-      totalNodes,
-      hiddenNodes: allHiddenNodes.length,
-      libraryNodes: libraryNodes.length,
+      totalNodes: 0,
+      hiddenNodes: 0,
+      libraryNodes: 0,
       checks: {},
     };
 
     // loop through the array and calculate the lint check totals
-
     for (const node of processedNodes) {
-      for (const check of node.lintChecks) {
+      // the last element in the array is the aggregate count
+      if ((node as ProcessedNodeAggregate).isLastElement) {
+        const aggregate = node as ProcessedNodeAggregate;
+        aggregates.totalNodes = aggregate.numTotalNodes;
+        aggregates.hiddenNodes = aggregate.numHiddenNodes;
+        aggregates.libraryNodes = aggregate.numLibraryNodes;
+        continue;
+      }
+
+      const currNode = node as ProcessedNode;
+
+      for (const check of currNode.lintChecks) {
         if (!aggregates.checks[check.checkName]) {
           aggregates.checks[check.checkName] = {
             full: 0,
@@ -179,7 +193,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
         name: rootNode.name,
       },
       aggregateCounts: aggregates,
-      nodes: processedNodes,
+      nodes: [],
     };
   }
 
