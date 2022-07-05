@@ -7,7 +7,7 @@ import getPartialStyleMatches from "./utils/partial";
 
 export default function checkStrokeStyleMatch(
   styleBucket: StyleBucket,
-  targetNode: SceneNode
+  targetNode: BaseNode
 ): LintCheck {
   // decrement the count, or increment depending on what we find
   const checkName = "Stroke-Fill-Style";

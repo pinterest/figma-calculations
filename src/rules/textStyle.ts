@@ -7,7 +7,7 @@ import getPartialStyleMatches from "./utils/partial";
 
 export default function checkTextMatch(
   styleBucket: StyleBucket,
-  targetNode: SceneNode
+  targetNode: BaseNode
 ): LintCheck {
   const checkName = "Text-Style";
   // console.log(targetNode);

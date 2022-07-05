@@ -16,6 +16,10 @@ export interface FigmaSharedNode {
 
 export type StyleBucket = { [key: string]: { [id: string]: FigmaTeamStyle } };
 
+export type ComponentBucket = {
+  [name: string]: FigmaTeamComponent & { variants: { [key: string]: string } };
+};
+
 export type PropertyCheck = {
   name?: string;
   nodePath: string;

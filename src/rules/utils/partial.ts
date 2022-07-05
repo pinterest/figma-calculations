@@ -15,7 +15,7 @@ export default function getPartialStyleMatches(
   stylesBucket: StyleBucket,
   styleType: FigmaStyleType,
   propertiesToCheck: PropertyCheck[],
-  targetNode: SceneNode
+  targetNode: BaseNode
 ): LintCheck {
   const suggestions: LintSuggestion[] = [];
   const styles = stylesBucket[styleType];

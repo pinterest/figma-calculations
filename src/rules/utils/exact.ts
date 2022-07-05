@@ -3,7 +3,7 @@ import { FigmaStyleType, StyleBucket } from "../../models/figma";
 export const isExactStyleMatch = (
   styleType: FigmaStyleType | "STROKE",
   styleBucket: StyleBucket,
-  targetNode: SceneNode
+  targetNode: BaseNode
 ) => {
   // way the styles are represented varies based on runtime
   if (typeof figma !== "undefined") {
@@ -16,7 +16,7 @@ export const isExactStyleMatch = (
 function isExactStyleMatchInFigma(
   styleType: FigmaStyleType | "STROKE",
   styleBucket: StyleBucket,
-  targetNode: SceneNode
+  targetNode: BaseNode
 ) {
   let styleId: string | symbol = "";
   // check corresponding Id props to verify exact matches
@@ -55,7 +55,7 @@ function isExactStyleMatchInFigma(
 function isExactStyleMatchFromCloud(
   styleType: FigmaStyleType | "STROKE",
   styleBucket: StyleBucket,
-  targetNode: SceneNode
+  targetNode: BaseNode
 ) {
   if (!(targetNode as any).styles) {
     return false;

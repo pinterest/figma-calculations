@@ -44,19 +44,19 @@ const doWork = async () => {
 
     // run through all of the pages and process them
     for (const page of figmaCalculator.getAllPages()) {
-      const processedNodes = figmaCalculator.processTree(page);
-
-      for (const node of processedNodes.nodes) {
-        for (const check of node.lintChecks) {
-          // example: show the text linting results and suggestions
-          if (
-            check.checkName === "Text-Style" &&
-            check.matchLevel === "Partial"
-          ) {
-            // console.log(check.suggestions);
+      const processedNodes = figmaCalculator.processTree(page, {
+        onProcessNode: (node) => {
+          for (const check of node.lintChecks) {
+            // example: show the text linting results and suggestions
+            if (
+              check.checkName === "Text-Style" &&
+              check.matchLevel === "Partial"
+            ) {
+              // console.log(check.suggestions);
+            }
           }
-        }
-      }
+        },
+      });
 
       const pageDetails: ProcessedPage = {
         file,

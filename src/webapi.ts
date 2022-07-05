@@ -90,7 +90,7 @@ export class FigmaAPIHelper {
           },
           params: {
             after: nextCursor,
-            page_size: 100,
+            page_size: 10000,
           },
         }
       );
@@ -124,7 +124,7 @@ export class FigmaAPIHelper {
         },
         params: {
           after: nextCursor,
-          page_size: 1000,
+          page_size: 10000,
         },
       });
 
@@ -155,7 +155,7 @@ export class FigmaAPIHelper {
         },
         params: {
           after: nextCursor,
-          page_size: 1000,
+          page_size: 10000,
         },
       });
 
