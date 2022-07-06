@@ -1,6 +1,11 @@
-import { FigmaTeamComponent, FigmaTeamStyle } from "./models/figma";
+import {
+  FigmaTeamComponent,
+  FigmaTeamStyle,
+  StyleBucket,
+} from "./models/figma";
 import {
   AggregateCounts,
+  LintCheck,
   LintCheckPercent,
   ProcessedNode,
   ProcessedNodeTree,
@@ -12,6 +17,11 @@ import {
   TeamPages,
 } from "./models/stats";
 import FigmaDocumentParser from "./parser";
+import {
+  generateComponentMap,
+  generateStyleBucket,
+  runSimilarityChecks,
+} from "./rules";
 
 import { makePercent } from "./utils/percent";
 import { getLintCheckPercent, getProcessedNodes } from "./utils/process";
@@ -114,6 +124,31 @@ export class FigmaCalculator extends FigmaDocumentParser {
     return this.allStyles;
   }
 
+  generateStyleBucket = generateStyleBucket;
+
+  /**
+   *
+   * @param rootNode
+   * @param opts
+   * @returns ProcessedNode
+   */
+  getLintResults(
+    node: BaseNode,
+    opts?: { styles?: FigmaTeamStyle[]; styleBucket?: StyleBucket }
+  ): LintCheck[] {
+    let styleBucket = opts?.styleBucket;
+    if (opts?.styles) {
+      styleBucket = this.generateStyleBucket(opts?.styles);
+    }
+
+    if (!styleBucket)
+      throw new Error(
+        "No style bucket, or array of styles provided to generate lint results"
+      );
+
+    return runSimilarityChecks(styleBucket, node);
+  }
+
   /**
    * Looks through a given Figma tree and the checks and processes each of the nodes as individuals. Note: Hidden Nodes are thrown out
    * @param rootNode - Can pass any Figma Node with children
@@ -121,10 +156,13 @@ export class FigmaCalculator extends FigmaDocumentParser {
    */
   processTree(
     rootNode: BaseNode,
-    components?: FigmaTeamComponent[],
-    allStyles?: FigmaTeamStyle[],
-    onProcessNode?: (node: ProcessedNode) => void
+    opts?: {
+      components?: FigmaTeamComponent[];
+      allStyles?: FigmaTeamStyle[];
+      onProcessNode?: (node: ProcessedNode) => void;
+    }
   ): ProcessedNodeTree {
+    const { components, allStyles, onProcessNode } = opts || {};
     const { allHiddenNodes, libraryNodes, totalNodes, processedNodes } =
       getProcessedNodes(
         rootNode,

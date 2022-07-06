@@ -1,7 +1,11 @@
 import { FigmaTeamComponent, FigmaTeamStyle } from "../models/figma";
 import { AggregateCounts, LintCheckName, ProcessedNode } from "../models/stats";
 import FigmaDocumentParser from "../parser";
-import { generateStyleBucket, runSimilarityChecks } from "../rules";
+import {
+  generateComponentMap,
+  generateStyleBucket,
+  runSimilarityChecks,
+} from "../rules";
 import { makePercent } from "./percent";
 
 // returns array of nodes that are in a hidden layer tree
@@ -21,17 +25,8 @@ export function getProcessedNodes(
   allStyles: FigmaTeamStyle[],
   onProcessNode?: (node: ProcessedNode) => void
 ) {
-  const targetInstanceNodes: { [key: string]: FigmaTeamComponent } = {};
-  for (const comp of components as FigmaTeamComponent[]) {
-    // use the containing frame name instead if it's a variant
-    // Usually, these look like "name": "Count=5"
-    // Hopefully we don't explicitly export components with an = signs in the name
-    if (comp.name.includes("=")) {
-      targetInstanceNodes[comp.containing_frame.name] = comp;
-    } else {
-      targetInstanceNodes[comp.name] = comp;
-    }
-  }
+  // create a map of the team components by name
+  const componentMap = generateComponentMap(components);
 
   const styleBuckets = generateStyleBucket(allStyles);
 
@@ -74,7 +69,7 @@ export function getProcessedNodes(
     }
 
     // get all the sublayers of an instance that's part of a library, and skip it
-    if (node.type === "INSTANCE" && targetInstanceNodes[node.name]) {
+    if (node.type === "INSTANCE" && componentMap[node.name]) {
       totalNodes -= 1;
 
       addToProcessedNodes({
