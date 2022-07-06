@@ -1,3 +1,4 @@
+import { FigmaCalculator } from "..";
 import { FigmaTeamComponent, FigmaTeamStyle } from "../models/figma";
 import { AggregateCounts, LintCheckName, ProcessedNode } from "../models/stats";
 import FigmaDocumentParser from "../parser";
@@ -26,18 +27,10 @@ export function getProcessedNodes(
   onProcessNode?: (node: ProcessedNode) => void
 ) {
   // create a map of the team components by name
-  const componentMap = generateComponentMap(components);
 
   const styleBuckets = generateStyleBucket(allStyles);
 
-  let totalNodes = 0;
-
   const processedNodes: ProcessedNode[] = [];
-
-  let libraryNodes: SceneNode[] = [];
-
-  let nodesToSkip: string[] = [];
-  let allHiddenNodes: string[] = [];
 
   const addToProcessedNodes = (node: ProcessedNode) => {
     if (onProcessNode) {
@@ -47,6 +40,49 @@ export function getProcessedNodes(
     processedNodes.push(node);
   };
 
+  // find all the nodes in the document
+  const allNodes = FigmaDocumentParser.FindAll(rootNode, (n) => true);
+
+  // toss any hidden nodes, get the counts
+  const { filteredNodes: hiddenNodes, numLayersFiltered: numHiddenNodes } =
+    FigmaCalculator.filterHiddenNodes(allNodes);
+
+  // toss any library nodes from the list
+  const { filteredNodes, numLayersFiltered: numLibraryNodes } =
+    FigmaCalculator.filterLibraryNodes(hiddenNodes, {
+      components,
+    });
+
+  // run lint checks on the remaning nodes
+  for (const node of filteredNodes) {
+    const result = runSimilarityChecks(styleBuckets, node);
+
+    addToProcessedNodes({
+      id: node.id,
+      name: node.name,
+      type: node.type,
+      lintChecks: result,
+      belongsToLibraryComponent: false,
+      similarComponents: [],
+    });
+  }
+
+  /*
+  console.log(processedNodes.length);
+  console.log(numLibraryNodes);
+  console.log(numHiddenNodes);
+  */
+
+  return {
+    processedNodes,
+    totalNodes: allNodes.length,
+    libraryNodes: numLibraryNodes,
+    allHiddenNodes: numHiddenNodes,
+  };
+
+  // calculate
+
+  /*
   FigmaDocumentParser.FindAll(rootNode, (node: SceneNode) => {
     // returns array of nodes that are in a hidden layer tree
 
@@ -132,8 +168,7 @@ export function getProcessedNodes(
       similarComponents: [],
     });
   }
-
-  return { processedNodes, libraryNodes, totalNodes, allHiddenNodes };
+  */
 }
 
 export function getLintCheckPercent(

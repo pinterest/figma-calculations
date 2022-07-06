@@ -24,7 +24,7 @@ const FakeFileData = {
   last_modified: "blah",
 };
 
-const TOTAL_PAGES = 9;
+const TOTAL_PAGES = 10;
 let figmaCalculator: FigmaCalculator;
 
 describe("Do Test File Cases Pass?", () => {

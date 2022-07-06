@@ -24,7 +24,11 @@ import {
 } from "./rules";
 
 import { makePercent } from "./utils/percent";
-import { getLintCheckPercent, getProcessedNodes } from "./utils/process";
+import {
+  getHiddenNodes,
+  getLintCheckPercent,
+  getProcessedNodes,
+} from "./utils/process";
 import { getFigmaPagesForTeam } from "./utils/teams";
 import { FigmaAPIHelper } from "./webapi";
 
@@ -149,6 +153,83 @@ export class FigmaCalculator extends FigmaDocumentParser {
     return runSimilarityChecks(styleBucket, node);
   }
 
+  static filterHiddenNodes(nodes: BaseNode[]): {
+    hiddenParentNodes: string[];
+    filteredNodes: BaseNode[];
+    numLayersFiltered: number;
+  } {
+    let allHiddenNodes: string[] = [];
+    const hiddenParentNodes: string[] = [];
+
+    nodes.forEach((node) => {
+      if ((node as FrameNode).visible === false) {
+        hiddenParentNodes.push(node.id);
+        getHiddenNodes(node).map((node) => allHiddenNodes.push(node.id));
+        return false;
+      }
+    });
+
+    const filteredNodes = nodes.filter((n) => {
+      // if the node is hidden, then don't include it in our counts
+      if (allHiddenNodes.includes(n.id)) {
+        return false;
+      }
+      return true;
+    });
+    return {
+      hiddenParentNodes,
+      filteredNodes,
+      numLayersFiltered: allHiddenNodes.length,
+    };
+  }
+  /**
+   *
+   * @param rootNode
+   * @param opts
+   * @returns boolean
+   * Looks at a set of node, and tosses out any nodes that belong to an instance node, and returns elements it finds
+   */
+  static filterLibraryNodes(
+    nodes: BaseNode[],
+    opts?: { components?: FigmaTeamComponent[] }
+  ): {
+    usedComponents: FigmaTeamComponent[];
+    filteredNodes: BaseNode[];
+    numLayersFiltered: number;
+  } {
+    // run through the page
+    if (!opts?.components)
+      throw new Error("No components provided to filter out library nodes");
+
+    const libraryNodes: FigmaTeamComponent[] = [];
+
+    const componentMap = generateComponentMap(opts?.components);
+
+    let nodesToSkip: string[] = [];
+
+    nodes.forEach((node) => {
+      if (node.type === "INSTANCE" && componentMap[node.name]) {
+        nodesToSkip.push(node.id);
+        const subNodes = FigmaDocumentParser.FindAll(node, () => true);
+        subNodes.map((n) => nodesToSkip.push(n.id));
+        libraryNodes.push(componentMap[node.name]);
+      }
+    });
+
+    const filteredNodes = nodes.filter((n) => {
+      if (nodesToSkip.includes(n.id)) {
+        return false;
+      }
+      return true;
+    });
+
+    return {
+      filteredNodes,
+      usedComponents: libraryNodes,
+      numLayersFiltered: nodesToSkip.length,
+    };
+  }
+
   /**
    * Looks through a given Figma tree and the checks and processes each of the nodes as individuals. Note: Hidden Nodes are thrown out
    * @param rootNode - Can pass any Figma Node with children
@@ -173,8 +254,8 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
     const aggregates: AggregateCounts = {
       totalNodes,
-      hiddenNodes: allHiddenNodes.length,
-      libraryNodes: libraryNodes.length,
+      hiddenNodes: allHiddenNodes,
+      libraryNodes: libraryNodes,
       checks: {},
     };
 
