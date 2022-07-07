@@ -155,33 +155,41 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
   static filterHiddenNodes(nodes: BaseNode[]): {
     hiddenParentNodes: string[];
-    filteredNodes: BaseNode[];
-    numLayersFiltered: number;
+    nonHiddenNodes: BaseNode[];
+    numHiddenLayers: number;
   } {
     let allHiddenNodes: string[] = [];
     const hiddenParentNodes: string[] = [];
 
     nodes.forEach((node) => {
-      if ((node as FrameNode).visible === false) {
+      if (
+        (node as FrameNode).visible === false &&
+        !allHiddenNodes.includes(node.id)
+      ) {
         hiddenParentNodes.push(node.id);
-        getHiddenNodes(node).map((node) => allHiddenNodes.push(node.id));
-        return false;
+        // add all of the children as hidden nodes
+        const subNodes = FigmaDocumentParser.FindAll(node, () => true);
+        allHiddenNodes.push(node.id);
+        subNodes.forEach((n) => allHiddenNodes.push(n.id));
       }
     });
 
-    const filteredNodes = nodes.filter((n) => {
-      // if the node is hidden, then don't include it in our counts
+    // we do our filtering on the second run because the order of nodes is unknown, and a child may appear before the parent
+    const nonHiddenNodes = nodes.filter((n) => {
+      // if the node is hidden, then toss it out
       if (allHiddenNodes.includes(n.id)) {
         return false;
       }
       return true;
     });
+
     return {
       hiddenParentNodes,
-      filteredNodes,
-      numLayersFiltered: allHiddenNodes.length,
+      nonHiddenNodes,
+      numHiddenLayers: allHiddenNodes.length,
     };
   }
+
   /**
    *
    * @param rootNode
@@ -193,40 +201,50 @@ export class FigmaCalculator extends FigmaDocumentParser {
     nodes: BaseNode[],
     opts?: { components?: FigmaTeamComponent[] }
   ): {
-    usedComponents: FigmaTeamComponent[];
-    filteredNodes: BaseNode[];
-    numLayersFiltered: number;
+    libraryNodes: FigmaTeamComponent[];
+    nonLibraryNodes: BaseNode[];
+    numLibraryNodes: number;
   } {
     // run through the page
     if (!opts?.components)
       throw new Error("No components provided to filter out library nodes");
 
-    const libraryNodes: FigmaTeamComponent[] = [];
+    const matchingComponents: FigmaTeamComponent[] = [];
 
     const componentMap = generateComponentMap(opts?.components);
 
-    let nodesToSkip: string[] = [];
+    let allLibraryNodes: string[] = [];
+
+    let filteredLibraryNodes: string[] = [];
 
     nodes.forEach((node) => {
-      if (node.type === "INSTANCE" && componentMap[node.name]) {
-        nodesToSkip.push(node.id);
+      if (
+        node.type === "INSTANCE" &&
+        componentMap[node.name] &&
+        !filteredLibraryNodes.includes(node.id)
+      ) {
+        allLibraryNodes.push(node.id);
+
+        // note: this introduces hidden nodes as well (e.g. nodes that were not in the original set of nodes), hence the second pass
         const subNodes = FigmaDocumentParser.FindAll(node, () => true);
-        subNodes.map((n) => nodesToSkip.push(n.id));
-        libraryNodes.push(componentMap[node.name]);
+        subNodes.forEach((n) => allLibraryNodes.push(n.id));
+        matchingComponents.push(componentMap[node.name]);
       }
     });
 
-    const filteredNodes = nodes.filter((n) => {
-      if (nodesToSkip.includes(n.id)) {
+    const nonLibraryNodes = nodes.filter((n) => {
+      if (allLibraryNodes.includes(n.id)) {
+        filteredLibraryNodes.push(n.id);
         return false;
       }
+
       return true;
     });
 
     return {
-      filteredNodes,
-      usedComponents: libraryNodes,
-      numLayersFiltered: nodesToSkip.length,
+      nonLibraryNodes,
+      libraryNodes: matchingComponents,
+      numLibraryNodes: filteredLibraryNodes.length,
     };
   }
 
@@ -315,9 +333,9 @@ export class FigmaCalculator extends FigmaDocumentParser {
     };
 
     for (const counts of aggregates) {
-      const { totalNodes, libraryNodes, checks } = counts;
+      const { totalNodes, libraryNodes, hiddenNodes, checks } = counts;
 
-      allTotals.totalNodesOnPage += totalNodes;
+      allTotals.totalNodesOnPage += totalNodes - hiddenNodes;
       allTotals.totalNodesInLibrary += libraryNodes;
 
       if (checks["Text-Style"] && opts && opts.includeMatchingText) {

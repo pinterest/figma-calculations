@@ -32,6 +32,8 @@ describe("Do Test File Cases Pass?", () => {
     figmaCalculator = new FigmaCalculator();
     figmaCalculator.setAPIToken(FIGMA_TOKEN);
     await figmaCalculator.fetchCloudDocument(TEST_FILE);
+    await figmaCalculator.loadComponents(TEAM_ID);
+    await figmaCalculator.loadStyles(TEAM_ID);
   });
 
   it("loads the document", async () => {
@@ -41,9 +43,6 @@ describe("Do Test File Cases Pass?", () => {
 
   it("Pass iOS and Web 100%", async () => {
     // only needed in a non-figma environment
-
-    await figmaCalculator.loadComponents(TEAM_ID);
-    await figmaCalculator.loadStyles(TEAM_ID);
 
     const frameResults: { [pageName: string]: AggregateCounts[] } = {};
     for (const page of figmaCalculator.getAllPages()) {
@@ -115,9 +114,11 @@ describe("Do Test File Cases Pass?", () => {
       frameResults[page.name] = [];
 
       for (const node of frameNodes) {
-        const processedNodes = figmaCalculator.processTree(node);
-
-        frameResults[page.name].push(processedNodes.aggregateCounts);
+        if (page.name === "Hidden Layer Handoff 100%") {
+          const processedNodes = figmaCalculator.processTree(node);
+          console.log(JSON.stringify(processedNodes.aggregateCounts));
+          frameResults[page.name].push(processedNodes.aggregateCounts);
+        }
       }
     }
 

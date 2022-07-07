@@ -2,11 +2,7 @@ import { FigmaCalculator } from "..";
 import { FigmaTeamComponent, FigmaTeamStyle } from "../models/figma";
 import { AggregateCounts, LintCheckName, ProcessedNode } from "../models/stats";
 import FigmaDocumentParser from "../parser";
-import {
-  generateComponentMap,
-  generateStyleBucket,
-  runSimilarityChecks,
-} from "../rules";
+import { generateStyleBucket, runSimilarityChecks } from "../rules";
 import { makePercent } from "./percent";
 
 // returns array of nodes that are in a hidden layer tree
@@ -26,8 +22,6 @@ export function getProcessedNodes(
   allStyles: FigmaTeamStyle[],
   onProcessNode?: (node: ProcessedNode) => void
 ) {
-  // create a map of the team components by name
-
   const styleBuckets = generateStyleBucket(allStyles);
 
   const processedNodes: ProcessedNode[] = [];
@@ -44,17 +38,17 @@ export function getProcessedNodes(
   const allNodes = FigmaDocumentParser.FindAll(rootNode, (n) => true);
 
   // toss any hidden nodes, get the counts
-  const { filteredNodes: hiddenNodes, numLayersFiltered: numHiddenNodes } =
+  const { nonHiddenNodes, numHiddenLayers } =
     FigmaCalculator.filterHiddenNodes(allNodes);
 
   // toss any library nodes from the list
-  const { filteredNodes, numLayersFiltered: numLibraryNodes } =
-    FigmaCalculator.filterLibraryNodes(hiddenNodes, {
+  const { nonLibraryNodes, numLibraryNodes } =
+    FigmaCalculator.filterLibraryNodes(nonHiddenNodes, {
       components,
     });
 
   // run lint checks on the remaning nodes
-  for (const node of filteredNodes) {
+  for (const node of nonLibraryNodes) {
     const result = runSimilarityChecks(styleBuckets, node);
 
     addToProcessedNodes({
@@ -66,109 +60,13 @@ export function getProcessedNodes(
       similarComponents: [],
     });
   }
-
-  /*
-  console.log(processedNodes.length);
-  console.log(numLibraryNodes);
-  console.log(numHiddenNodes);
-  */
 
   return {
     processedNodes,
     totalNodes: allNodes.length,
     libraryNodes: numLibraryNodes,
-    allHiddenNodes: numHiddenNodes,
+    allHiddenNodes: numHiddenLayers,
   };
-
-  // calculate
-
-  /*
-  FigmaDocumentParser.FindAll(rootNode, (node: SceneNode) => {
-    // returns array of nodes that are in a hidden layer tree
-
-    if (node.visible === false) {
-      const hiddenNodes = getHiddenNodes(node).map((node) => node.id);
-      allHiddenNodes = allHiddenNodes.concat(hiddenNodes);
-      return false;
-    }
-
-    // if the node is hidden, then don't include it in our counts
-    if (allHiddenNodes.includes(node.id)) {
-      return false;
-    }
-
-    totalNodes += 1;
-
-    // exclude any instance nodes
-    if (nodesToSkip.includes(node.id)) {
-      return false;
-    }
-
-    // get all the sublayers of an instance that's part of a library, and skip it
-    if (node.type === "INSTANCE" && componentMap[node.name]) {
-      totalNodes -= 1;
-
-      addToProcessedNodes({
-        id: node.id,
-        name: node.name,
-        type: node.type,
-        lintChecks: [],
-        belongsToLibraryComponent: true,
-        similarComponents: [],
-      });
-
-      const subNodes = FigmaDocumentParser.FindAll(node, () => true);
-
-      nodesToSkip = subNodes.map((n) => n.id);
-
-      const hiddenSubNodes = subNodes
-        .filter((node) => node.visible === false)
-        .map((node) => getHiddenNodes(node))
-        .flat();
-
-      const allHiddenNodesMap: { [key: string]: string } = {};
-
-      for (const node of hiddenSubNodes) {
-        allHiddenNodesMap[node.id] = "";
-      }
-
-      // anything that's not hidden is visible
-      const visibleNodes = subNodes.filter(
-        (node) => !(node.id in allHiddenNodesMap)
-      );
-
-      // all of the visible sub nodes of an instance node
-      libraryNodes = libraryNodes.concat(visibleNodes);
-
-      return false;
-    }
-
-    const result = runSimilarityChecks(styleBuckets, node);
-
-    addToProcessedNodes({
-      id: node.id,
-      name: node.name,
-      type: node.type,
-      lintChecks: result,
-      belongsToLibraryComponent: false,
-      similarComponents: [],
-    });
-
-    return true;
-  });
-
-  // throw in the subnodes of the instance nodes
-  for (const node of libraryNodes) {
-    addToProcessedNodes({
-      id: node.id,
-      name: node.name,
-      type: node.type,
-      lintChecks: [],
-      belongsToLibraryComponent: true,
-      similarComponents: [],
-    });
-  }
-  */
 }
 
 export function getLintCheckPercent(
@@ -182,7 +80,7 @@ export function getLintCheckPercent(
   };
 
   for (const count of aggregates) {
-    const { checks } = count;
+    const { checks, hiddenNodes } = count;
 
     if (checks[checkName]) {
       const results = checks[checkName]!;
