@@ -1,4 +1,5 @@
 import {
+  FigmaFile,
   FigmaTeamComponent,
   FigmaTeamStyle,
   StyleBucket,
@@ -51,19 +52,37 @@ export class FigmaCalculator extends FigmaDocumentParser {
     FigmaAPIHelper.setToken(apiToken);
   }
 
-  async fetchCloudDocument(fileKey: string): Promise<void> {
-    const { document, styles } = await FigmaAPIHelper.getFile(fileKey);
+  /**
+   * Fetches a cloud file, and also does some pre-processing to merge Figma Node and Style Keys for easier lookups
+   * @param fileKey - {string}
+   * @returns
+   */
+  async fetchCloudDocument(fileKey: string): Promise<FigmaFile> {
+    const file = await FigmaAPIHelper.getFile(fileKey);
+    const { document, styles, components, componentSets } = file;
 
     // look at the children and fix the styles to use the actual style key instead of node key
     FigmaCalculator.FindAll(document, (node) => {
       const cloudNode = node as any;
-      if (!cloudNode.styles) return false;
+
       for (const key in cloudNode.styles) {
         const styleNodeId: string = cloudNode.styles[key];
 
         if (cloudNode.styles[key]) {
           // replace the style node id with the actual style key returned in the styles map
           cloudNode.styles[key] = styles[styleNodeId]?.key;
+        }
+      }
+
+      // to-do: replace all of the "componentIDs" with the actual component key or frame name
+
+      if (cloudNode.componentId) {
+        const componentKey =
+          components[cloudNode.componentId]?.key ||
+          componentSets[cloudNode.componentId]?.key;
+
+        if (componentKey) {
+          cloudNode.componentId = componentKey;
         }
       }
       return false;
@@ -74,6 +93,8 @@ export class FigmaCalculator extends FigmaDocumentParser {
     if (!this.getDocumentNode()) {
       throw new Error("No document node or file key provided");
     }
+
+    return file;
   }
 
   getFilesForTeams = getFigmaPagesForTeam;
@@ -95,7 +116,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
     this.components = teamComponents.concat(teamComponentSets);
 
-    // throw out components that begin with a certain prefix
+    // throw out components that begin with a certain prefix (e..g all Handoff Components)
     if (opts && opts.filterPrefixes) {
       this.components = this.components.filter((comp) => {
         // use the containing frame name instead if it's a variant
@@ -128,7 +149,9 @@ export class FigmaCalculator extends FigmaDocumentParser {
     return this.allStyles;
   }
 
-  generateStyleBucket = generateStyleBucket;
+  static generateStyleBucket = generateStyleBucket;
+
+  static generateComponentMap = generateComponentMap;
 
   /**
    *
@@ -142,7 +165,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
   ): LintCheck[] {
     let styleBucket = opts?.styleBucket;
     if (opts?.styles) {
-      styleBucket = this.generateStyleBucket(opts?.styles);
+      styleBucket = FigmaCalculator.generateStyleBucket(opts?.styles);
     }
 
     if (!styleBucket)
@@ -201,7 +224,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
     nodes: BaseNode[],
     opts?: { components?: FigmaTeamComponent[] }
   ): {
-    libraryNodes: FigmaTeamComponent[];
+    libraryNodes: { [nodeId: string]: string[] };
     nonLibraryNodes: BaseNode[];
     numLibraryNodes: number;
   } {
@@ -209,33 +232,46 @@ export class FigmaCalculator extends FigmaDocumentParser {
     if (!opts?.components)
       throw new Error("No components provided to filter out library nodes");
 
-    const matchingComponents: FigmaTeamComponent[] = [];
-
     const componentMap = generateComponentMap(opts?.components);
 
-    let allLibraryNodes: string[] = [];
+    let allLibraryNodes: {
+      [nodeId: string]: string[];
+    } = {};
 
-    let filteredLibraryNodes: string[] = [];
+    const filteredLibraryNodes: string[] = [];
+
+    // get the component's real name
+    // check if a component has a mainComponent?
+    const isLibraryComponent = (instanceNode: any) => {
+      // if it's a web file, then check the componentId else the mainCompponent property to get the key
+      const componentKey =
+        instanceNode.componentId || instanceNode.mainComponent.key;
+
+      if (!componentKey) {
+        return false;
+      }
+
+      if (componentMap[componentKey]) return true;
+
+      return false;
+    };
 
     nodes.forEach((node) => {
-      if (
-        node.type === "INSTANCE" &&
-        componentMap[node.name] &&
-        !filteredLibraryNodes.includes(node.id)
-      ) {
-        allLibraryNodes.push(node.id);
+      if (node.type === "INSTANCE" && isLibraryComponent(node)) {
+        allLibraryNodes[node.id] = [];
 
         // note: this introduces hidden nodes as well (e.g. nodes that were not in the original set of nodes), hence the second pass
         const subNodes = FigmaDocumentParser.FindAll(node, () => true);
-        subNodes.forEach((n) => allLibraryNodes.push(n.id));
-        matchingComponents.push(componentMap[node.name]);
+        subNodes.forEach((n) => allLibraryNodes[node.id].push(n.id));
       }
     });
 
     const nonLibraryNodes = nodes.filter((n) => {
-      if (allLibraryNodes.includes(n.id)) {
-        filteredLibraryNodes.push(n.id);
-        return false;
+      for (const key in allLibraryNodes) {
+        if (key === n.id || allLibraryNodes[key].includes(n.id)) {
+          filteredLibraryNodes.push(n.id);
+          return false;
+        }
       }
 
       return true;
@@ -243,7 +279,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
     return {
       nonLibraryNodes,
-      libraryNodes: matchingComponents,
+      libraryNodes: allLibraryNodes,
       numLibraryNodes: filteredLibraryNodes.length,
     };
   }

@@ -17,7 +17,7 @@ export interface FigmaSharedNode {
 export type StyleBucket = { [key: string]: { [id: string]: FigmaTeamStyle } };
 
 export type ComponentBucket = {
-  [name: string]: FigmaTeamComponent & { variants: { [key: string]: string } };
+  [key: string]: { name: string };
 };
 
 export type PropertyCheck = {
@@ -63,8 +63,8 @@ export interface FigmaFile {
   thumbnailUrl: string;
   version: string;
   document: DocumentNode;
-  components: Map<string, ComponentNode>;
-  componentSets: Map<string, ComponentNode>;
+  components: { [style_node_id: string]: FigmaTeamComponent };
+  componentSets: { [style_node_id: string]: FigmaTeamComponent };
   schemaVersion: 0;
   styles: { [style_node_id: string]: FigmaTeamStyle };
   mainFileKey: string;

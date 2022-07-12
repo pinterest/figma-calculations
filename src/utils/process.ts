@@ -42,11 +42,12 @@ export function getProcessedNodes(
     FigmaCalculator.filterHiddenNodes(allNodes);
 
   // toss any library nodes from the list
-  const { nonLibraryNodes, numLibraryNodes } =
+  const { nonLibraryNodes, numLibraryNodes, libraryNodes } =
     FigmaCalculator.filterLibraryNodes(nonHiddenNodes, {
       components,
     });
 
+  console.log(libraryNodes);
   // run lint checks on the remaning nodes
   for (const node of nonLibraryNodes) {
     const result = runSimilarityChecks(styleBuckets, node);

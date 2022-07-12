@@ -81,11 +81,12 @@ export function generateComponentMap(
 
   // create a map of the team components by name
   for (const comp of components) {
+    componentBucket[comp.key] = comp;
     // use the containing frame name instead if it's a variant
     // Usually, these look like "name": "Count=5"
 
     // Edge case: one thing to note, if a component is exported with an = signs in the name, this may break
-    if (comp.name.includes("=")) {
+    /*if (comp.name.includes("=")) {
       // split out all of the variants
       const variants = comp.name.split(",");
       const variantKeys = variants.reduce((acc, curr) => {
@@ -106,7 +107,7 @@ export function generateComponentMap(
         ...comp,
         variants: {},
       };
-    }
+    }*/
   }
   return componentBucket;
 }
