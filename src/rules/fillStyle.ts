@@ -23,7 +23,6 @@ export default function checkFillStyleMatch(
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
   // check if style is exact match
-  // check if style is exact match
   const exactMatch = isExactStyleMatch("FILL", styleBucket, targetNode);
 
   if (exactMatch)
