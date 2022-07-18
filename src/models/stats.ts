@@ -48,6 +48,7 @@ export type LintCheck = {
   matchLevel: MatchLevel;
   suggestions: LintSuggestion[];
   exactMatch?: { key: string };
+
 };
 export type ProcessedNode = {
   id: string;

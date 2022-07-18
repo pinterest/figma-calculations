@@ -79,35 +79,18 @@ export function generateComponentMap(
   // create hashmap of styles by styleType
   const componentBucket: ComponentBucket = {};
 
-  // create a map of the team components by name
+  // create a map of the team components by their key
   for (const comp of components) {
-    componentBucket[comp.key] = comp;
-    // use the containing frame name instead if it's a variant
-    // Usually, these look like "name": "Count=5"
+    const getComponentReadableName = () => {
+      if (comp.name.includes("=")) {
+        return comp.containing_frame.name;
+      }
 
-    // Edge case: one thing to note, if a component is exported with an = signs in the name, this may break
-    /*if (comp.name.includes("=")) {
-      // split out all of the variants
-      const variants = comp.name.split(",");
-      const variantKeys = variants.reduce((acc, curr) => {
-        const [key, value] = curr.split("=");
-        acc[key] = value;
-        return acc;
-      }, {} as any);
+      return comp.name;
+    };
 
-      componentBucket[comp.containing_frame.name] = {
-        ...comp,
-        variants: {
-          ...variantKeys,
-          ...componentBucket[comp.containing_frame.name]?.variants,
-        },
-      };
-    } else {
-      componentBucket[comp.name] = {
-        ...comp,
-        variants: {},
-      };
-    }*/
+    if (componentBucket)
+      componentBucket[comp.key] = { name: getComponentReadableName() };
   }
   return componentBucket;
 }

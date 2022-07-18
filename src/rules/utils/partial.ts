@@ -96,6 +96,7 @@ export default function getPartialStyleMatches(
           : property.figmaPath || property.nodePath;
 
       const targetValue = jp.value(targetNode, pathToUse);
+      
 
       if (!targetValue) continue;
 
