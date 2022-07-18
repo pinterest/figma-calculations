@@ -56,7 +56,8 @@ export default function checkStrokeStyleMatch(
         matchType: "exact",
       },
     ],
-    targetNode
+    targetNode,
+    { union: true }
   );
 
   return { checkName, matchLevel, suggestions };

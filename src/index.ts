@@ -163,10 +163,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
     node: BaseNode,
     opts?: { styles?: FigmaTeamStyle[]; styleBucket?: StyleBucket }
   ): LintCheck[] {
-    let styleBucket = opts?.styleBucket;
-    if (opts?.styles) {
-      styleBucket = FigmaCalculator.generateStyleBucket(opts?.styles);
-    }
+    let allStyles = this.allStyles || opts?.styles;
+
+    let styleBucket =
+      opts?.styleBucket || FigmaCalculator.generateStyleBucket(allStyles);
 
     if (!styleBucket)
       throw new Error(

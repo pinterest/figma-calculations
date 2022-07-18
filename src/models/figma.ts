@@ -24,7 +24,9 @@ export type PropertyCheck = {
   name?: string;
   nodePath: string;
   stylePath: string;
+  figmaPath?: string; // the path in a Figma File may be different than the path in the cloud document
   matchType: "exact" | "includes";
+  removeSpaces?: boolean;
 };
 
 export interface FigmaTeamComponent extends FigmaSharedNode {

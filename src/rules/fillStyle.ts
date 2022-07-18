@@ -73,7 +73,8 @@ export default function checkFillStyleMatch(
         matchType: "exact",
       },
     ],
-    targetNode
+    targetNode,
+    { union: true }
   );
 
   return { checkName, matchLevel, suggestions };

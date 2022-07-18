@@ -24,7 +24,7 @@ const FakeFileData = {
   last_modified: "blah",
 };
 
-const TOTAL_PAGES = 10;
+const TOTAL_PAGES = 11;
 let figmaCalculator: FigmaCalculator;
 
 describe("Do Test File Cases Pass?", () => {
@@ -56,7 +56,7 @@ describe("Do Test File Cases Pass?", () => {
 
       for (const node of frameNodes) {
         const processedNodes = figmaCalculator.processTree(node);
-        console.log(processedNodes.aggregateCounts);
+
         frameResults[page.name].push(processedNodes.aggregateCounts);
       }
     }
@@ -125,5 +125,42 @@ describe("Do Test File Cases Pass?", () => {
       figmaCalculator.getTextStylePercentage(frameResults["iOS Handoff 100%"])
         .full
     ).toBe(100);
+  });
+
+  it("Provides 3 Lint Fixes", () => {
+    const frameResults: { [pageName: string]: AggregateCounts[] } = {};
+    for (const page of figmaCalculator.getAllPages()) {
+      if (page.name === "Partial Text Test") {
+        FigmaCalculator.FindAll(page, (node) => {
+          if (node.type === "TEXT") {
+            const results = figmaCalculator.getLintResults(node);
+            if (node.name.includes("Android")) {
+              for (const result of results) {
+                if (result.checkName === "Text-Style") {
+                  expect(result.suggestions.length).toBe(1);
+                }
+              }
+            }
+            if (node.name.includes("iOS")) {
+              for (const result of results) {
+                if (result.checkName === "Text-Style") {
+                  // iOS Returns 2 beacuse we can't distinguish between Web or iOS style from Figma, so take both
+                  expect(result.suggestions.length).toBe(2);
+                }
+              }
+            }
+            if (node.name.includes("Web")) {
+              for (const result of results) {
+                if (result.checkName === "Text-Style") {
+                  expect(result.suggestions.length).toBe(1);
+                }
+              }
+            }
+          }
+
+          return false;
+        });
+      }
+    }
   });
 });
