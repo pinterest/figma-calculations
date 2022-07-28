@@ -49,7 +49,7 @@ export default function getPartialStyleMatches(
         }
       } else {
         // console.log(targetValue, styleValue);
-        if (targetValue.includes(styleValue)) {
+        if (styleValue.includes(targetValue)) {
           return {
             message: `Possible Gestalt ${
               property.name || checkName
@@ -96,7 +96,6 @@ export default function getPartialStyleMatches(
           : property.figmaPath || property.nodePath;
 
       const targetValue = jp.value(targetNode, pathToUse);
-      
 
       if (!targetValue) continue;
 
