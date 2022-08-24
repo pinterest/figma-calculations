@@ -40,7 +40,7 @@ function isExactStyleMatchInFigma(
   if (styleId && styleId !== figma.mixed) {
     if (typeof styleId === "string") {
       // get the key from the style node ID
-      const styleNodeId = styleId.split(":")[1]?.split(",")[1];
+      const styleNodeId = styleId.split(":")[1]?.split(",")[0];
 
       const existingStyle = styles[styleNodeId];
       if (existingStyle) {

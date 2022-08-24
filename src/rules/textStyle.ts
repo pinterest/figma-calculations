@@ -35,15 +35,25 @@ export default function checkTextMatch(
       {
         stylePath: "$.style.fontFamily",
         nodePath: "$.style.fontFamily",
+        figmaPath: "$.fontName.family",
+        matchType: "exact",
+        removeSpaces: true,
+      },
+      {
+        stylePath: "$.style.fontSize",
+        nodePath: "$.style.fontSize",
+        figmaPath: "$.fontSize",
         matchType: "exact",
       },
       {
-        stylePath: "$.style.fontScriptName",
+        stylePath: "$.style.fontPostScriptName",
         nodePath: "$.style.fontPostScriptName",
+        figmaPath: "$.fontName.style",
         matchType: "includes",
       },
     ],
-    targetNode
+    targetNode,
+    { union: true }
   );
 
   return { checkName, matchLevel, suggestions };

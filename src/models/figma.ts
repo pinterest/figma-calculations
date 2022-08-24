@@ -17,14 +17,16 @@ export interface FigmaSharedNode {
 export type StyleBucket = { [key: string]: { [id: string]: FigmaTeamStyle } };
 
 export type ComponentBucket = {
-  [name: string]: FigmaTeamComponent & { variants: { [key: string]: string } };
+  [key: string]: { name: string };
 };
 
 export type PropertyCheck = {
   name?: string;
   nodePath: string;
   stylePath: string;
+  figmaPath?: string; // the path in a Figma File may be different than the path in the cloud document
   matchType: "exact" | "includes";
+  removeSpaces?: boolean;
 };
 
 export interface FigmaTeamComponent extends FigmaSharedNode {
@@ -63,8 +65,8 @@ export interface FigmaFile {
   thumbnailUrl: string;
   version: string;
   document: DocumentNode;
-  components: Map<string, ComponentNode>;
-  componentSets: Map<string, ComponentNode>;
+  components: { [style_node_id: string]: FigmaTeamComponent };
+  componentSets: { [style_node_id: string]: FigmaTeamComponent };
   schemaVersion: 0;
   styles: { [style_node_id: string]: FigmaTeamStyle };
   mainFileKey: string;
