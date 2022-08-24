@@ -309,7 +309,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
     const aggregates: AggregateCounts = {
       totalNodes,
       hiddenNodes: allHiddenNodes,
-      libraryNodes: libraryNodes,
+      libraryNodes,
       checks: {},
     };
 
