@@ -32,24 +32,19 @@ export async function getFigmaPagesForTeam(
     }
   }
 
-  let fileCount = 1;
-  for (const file of files) {
-    try {
-      const day = dayjs(file.last_modified);
-      // files
-      if (day.isAfter(dayjs().subtract(numWeeksAgo, "week"))) {
-        fileCount++;
-      }
-    } catch (ex) {
-      console.log(ex);
+  const filteredFiles = files.filter((file) => {
+    const day = dayjs(file.last_modified);
+    if (day.isAfter(dayjs().subtract(numWeeksAgo, "week"))) {
+      return true;
     }
-  }
+    return false;
+  });
 
   return {
-    files,
+    files: filteredFiles,
     counts: {
       total: files.length,
-      recentlyModified: fileCount,
+      recentlyModified: filteredFiles.length,
     },
   };
 }
