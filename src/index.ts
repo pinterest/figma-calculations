@@ -407,7 +407,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
    * Get a breakdown of adoption percentages by team and project and how they rollup
    * @param allPages - a set of page details and figma file details with processed nodes
    */
-  getBreakDownByTeams(pages: ProcessedPage[]): {
+  getBreakDownByTeams(
+    pages: ProcessedPage[],
+    opts?: { includeMatchingText: boolean }
+  ): {
     projects: ProcessedProjectBreakdown;
     teams: ProcessedTeamBreakdown;
     pages: ProcessedPageBreakdown;
@@ -460,7 +463,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
               return {
                 name: page.file.name,
                 last_modified: page.file.last_modified,
-                adoptionPercent: this.getAdoptionPercent([page.pageAggregates]),
+                adoptionPercent: this.getAdoptionPercent(
+                  [page.pageAggregates],
+                  opts
+                ),
                 lintPercentages: {
                   "Text-Style": this.getTextStylePercentage([
                     page.pageAggregates,
@@ -473,7 +479,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
           //  rollup the adoption percentages to project level stats
           processedProjectStats[team][project] = {
-            adoptionPercent: this.getAdoptionPercent(allProjectProcessedNodes),
+            adoptionPercent: this.getAdoptionPercent(
+              allProjectProcessedNodes,
+              opts
+            ),
             lintPercentages: {
               "Text-Style": this.getTextStylePercentage(
                 allProjectProcessedNodes
@@ -489,7 +498,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
         // rollup the adoption percentages to the team level stats
         processedTeamStats[team] = {
-          adoptionPercent: this.getAdoptionPercent(teamProcessedNodes),
+          adoptionPercent: this.getAdoptionPercent(teamProcessedNodes, opts),
           lintPercentages: {
             "Text-Style": this.getTextStylePercentage(teamProcessedNodes),
             "Fill-Style": this.getFillStylePercent(teamProcessedNodes),
@@ -500,7 +509,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
       // calculate a final adoption score with all of the nodes
       const totals: ProcessedPercents = {
-        adoptionPercent: this.getAdoptionPercent(allProcessedNodes),
+        adoptionPercent: this.getAdoptionPercent(allProcessedNodes, opts),
         lintPercentages: {
           "Text-Style": this.getTextStylePercentage(allProcessedNodes),
           "Fill-Style": this.getFillStylePercent(allProcessedNodes),
