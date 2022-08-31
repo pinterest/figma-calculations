@@ -16,6 +16,20 @@ jest.setTimeout(300000);
 
 const TEST_FILE = "XZe09gY6eNSg4rZHkN8RP2"; // "xSpy5UYEhvte0j3i7E2Hnd" ;
 const TEAM_ID = "626524232805730321";
+const TEAM_IDS = [
+  "1040347261379002788",
+  "969820474577737549",
+  "888190986662740847",
+  "758073086094656143",
+  "742865047532142301",
+  "784245363616834937",
+  "763841153159625143",
+  "763841187386191288",
+  "626524232805730321",
+  "763841216024165817",
+  "708383139233476090",
+  "851831158188134404",
+];
 
 const FakeFileData = {
   key: TEST_FILE,
@@ -36,6 +50,11 @@ describe("Do Test File Cases Pass?", () => {
     const styles = await figmaCalculator.loadStyles(TEAM_ID);
 
     fs.writeFileSync("../comps.json", JSON.stringify(components));
+  });
+
+  it("less than a 1000 files a week", async () => {
+    const { files } = await figmaCalculator.getFilesForTeams(TEAM_IDS, 2);
+    expect(files.length).toBeLessThan(1000);
   });
 
   it("loads the document", async () => {
@@ -145,14 +164,14 @@ describe("Do Test File Cases Pass?", () => {
               for (const result of results) {
                 if (result.checkName === "Text-Style") {
                   // iOS Returns 2 beacuse we can't distinguish between Web or iOS style from Figma, so take both
-                  expect(result.suggestions.length).toBe(2);
+                  expect(result.suggestions.length).toBe(3);
                 }
               }
             }
             if (node.name.includes("Web")) {
               for (const result of results) {
                 if (result.checkName === "Text-Style") {
-                  expect(result.suggestions.length).toBe(1);
+                  expect(result.suggestions.length).toBe(2);
                 }
               }
             }
