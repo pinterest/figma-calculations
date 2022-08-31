@@ -47,6 +47,32 @@ export function getProcessedNodes(
       components,
     });
 
+  // also process the library nodes
+  for (const nodeId of Object.keys(libraryNodes)) {
+    const baseInstanceComponent = {
+      name: libraryNodes[nodeId].name,
+      type: "INSTANCE",
+      lintChecks: [],
+      belongsToLibraryComponent: true,
+      similarComponents: [],
+    };
+
+    // add the top-level node
+    addToProcessedNodes({
+      id: nodeId,
+      ...baseInstanceComponent,
+    });
+
+    // add all the individual library nodes
+    const { layers } = libraryNodes[nodeId];
+    for (const layerNodeId of layers) {
+      addToProcessedNodes({
+        id: layerNodeId,
+        ...baseInstanceComponent,
+      });
+    }
+  }
+
   // run lint checks on the remaning nodes
   for (const node of nonLibraryNodes) {
     const result = runSimilarityChecks(styleBuckets, node);

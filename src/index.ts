@@ -224,7 +224,9 @@ export class FigmaCalculator extends FigmaDocumentParser {
     nodes: BaseNode[],
     opts?: { components?: FigmaTeamComponent[] }
   ): {
-    libraryNodes: { [nodeId: string]: string[] };
+    libraryNodes: {
+      [nodeId: string]: { layers: string[]; name: string };
+    };
     nonLibraryNodes: BaseNode[];
     numLibraryNodes: number;
   } {
@@ -235,7 +237,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
     const componentMap = generateComponentMap(opts?.components);
 
     let allLibraryNodes: {
-      [nodeId: string]: string[];
+      [nodeId: string]: { layers: string[]; name: string };
     } = {};
 
     const filteredLibraryNodes: string[] = [];
@@ -258,17 +260,17 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
     nodes.forEach((node) => {
       if (node.type === "INSTANCE" && isLibraryComponent(node)) {
-        allLibraryNodes[node.id] = [];
+        allLibraryNodes[node.id] = { layers: [], name: node.name };
 
         // note: this introduces hidden nodes as well (e.g. nodes that were not in the original set of nodes), hence the second pass
         const subNodes = FigmaDocumentParser.FindAll(node, () => true);
-        subNodes.forEach((n) => allLibraryNodes[node.id].push(n.id));
+        subNodes.forEach((n) => allLibraryNodes[node.id].layers.push(n.id));
       }
     });
 
     const nonLibraryNodes = nodes.filter((n) => {
       for (const key in allLibraryNodes) {
-        if (key === n.id || allLibraryNodes[key].includes(n.id)) {
+        if (key === n.id || allLibraryNodes[key].layers.includes(n.id)) {
           filteredLibraryNodes.push(n.id);
           return false;
         }
@@ -407,7 +409,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
    * Get a breakdown of adoption percentages by team and project and how they rollup
    * @param allPages - a set of page details and figma file details with processed nodes
    */
-  getBreakDownByTeams(pages: ProcessedPage[]): {
+  getBreakDownByTeams(
+    pages: ProcessedPage[],
+    opts?: { includeMatchingText: boolean }
+  ): {
     projects: ProcessedProjectBreakdown;
     teams: ProcessedTeamBreakdown;
     pages: ProcessedPageBreakdown;
@@ -458,7 +463,12 @@ export class FigmaCalculator extends FigmaDocumentParser {
           processedPageStats[team][project] = {
             pages: pages.map((page) => {
               return {
-                adoptionPercent: this.getAdoptionPercent([page.pageAggregates]),
+                name: page.file.name,
+                last_modified: page.file.last_modified,
+                adoptionPercent: this.getAdoptionPercent(
+                  [page.pageAggregates],
+                  opts
+                ),
                 lintPercentages: {
                   "Text-Style": this.getTextStylePercentage([
                     page.pageAggregates,
@@ -471,7 +481,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
           //  rollup the adoption percentages to project level stats
           processedProjectStats[team][project] = {
-            adoptionPercent: this.getAdoptionPercent(allProjectProcessedNodes),
+            adoptionPercent: this.getAdoptionPercent(
+              allProjectProcessedNodes,
+              opts
+            ),
             lintPercentages: {
               "Text-Style": this.getTextStylePercentage(
                 allProjectProcessedNodes
@@ -487,7 +500,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
         // rollup the adoption percentages to the team level stats
         processedTeamStats[team] = {
-          adoptionPercent: this.getAdoptionPercent(teamProcessedNodes),
+          adoptionPercent: this.getAdoptionPercent(teamProcessedNodes, opts),
           lintPercentages: {
             "Text-Style": this.getTextStylePercentage(teamProcessedNodes),
             "Fill-Style": this.getFillStylePercent(teamProcessedNodes),
@@ -498,7 +511,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
       // calculate a final adoption score with all of the nodes
       const totals: ProcessedPercents = {
-        adoptionPercent: this.getAdoptionPercent(allProcessedNodes),
+        adoptionPercent: this.getAdoptionPercent(allProcessedNodes, opts),
         lintPercentages: {
           "Text-Style": this.getTextStylePercentage(allProcessedNodes),
           "Fill-Style": this.getFillStylePercent(allProcessedNodes),
