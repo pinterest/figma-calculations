@@ -224,7 +224,9 @@ export class FigmaCalculator extends FigmaDocumentParser {
     nodes: BaseNode[],
     opts?: { components?: FigmaTeamComponent[] }
   ): {
-    libraryNodes: { [nodeId: string]: string[] };
+    libraryNodes: {
+      [nodeId: string]: { layers: string[]; name: string };
+    };
     nonLibraryNodes: BaseNode[];
     numLibraryNodes: number;
   } {
@@ -235,7 +237,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
     const componentMap = generateComponentMap(opts?.components);
 
     let allLibraryNodes: {
-      [nodeId: string]: string[];
+      [nodeId: string]: { layers: string[]; name: string };
     } = {};
 
     const filteredLibraryNodes: string[] = [];
@@ -258,17 +260,17 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
     nodes.forEach((node) => {
       if (node.type === "INSTANCE" && isLibraryComponent(node)) {
-        allLibraryNodes[node.id] = [];
+        allLibraryNodes[node.id] = { layers: [], name: node.name };
 
         // note: this introduces hidden nodes as well (e.g. nodes that were not in the original set of nodes), hence the second pass
         const subNodes = FigmaDocumentParser.FindAll(node, () => true);
-        subNodes.forEach((n) => allLibraryNodes[node.id].push(n.id));
+        subNodes.forEach((n) => allLibraryNodes[node.id].layers.push(n.id));
       }
     });
 
     const nonLibraryNodes = nodes.filter((n) => {
       for (const key in allLibraryNodes) {
-        if (key === n.id || allLibraryNodes[key].includes(n.id)) {
+        if (key === n.id || allLibraryNodes[key].layers.includes(n.id)) {
           filteredLibraryNodes.push(n.id);
           return false;
         }
