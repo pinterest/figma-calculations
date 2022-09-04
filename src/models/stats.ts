@@ -3,7 +3,11 @@ import { FigmaPartialFile } from "./figma";
 export type ProcessedPageBreakdown = {
   [teamName: string]: {
     [projectName: string]: {
-      pages: ProcessedPercents[];
+      pages: (ProcessedPercents & {
+        key: string;
+        name: string;
+        last_modified: string;
+      })[];
     };
   };
 };
@@ -48,7 +52,6 @@ export type LintCheck = {
   matchLevel: MatchLevel;
   suggestions: LintSuggestion[];
   exactMatch?: { key: string };
-
 };
 export type ProcessedNode = {
   id: string;

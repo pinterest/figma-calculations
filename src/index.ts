@@ -25,13 +25,13 @@ import {
 } from "./rules";
 
 import { makePercent } from "./utils/percent";
-import {
-  getHiddenNodes,
-  getLintCheckPercent,
-  getProcessedNodes,
-} from "./utils/process";
+import { getLintCheckPercent, getProcessedNodes } from "./utils/process";
 import { getFigmaPagesForTeam } from "./utils/teams";
 import { FigmaAPIHelper } from "./webapi";
+
+// exporting the types to reuse
+export * from "./models/stats";
+export * from "./models/figma";
 
 export class FigmaCalculator extends FigmaDocumentParser {
   components: FigmaTeamComponent[] = [];
@@ -464,6 +464,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
             pages: pages.map((page) => {
               return {
                 name: page.file.name,
+                key: page.file.key,
                 last_modified: page.file.last_modified,
                 adoptionPercent: this.getAdoptionPercent(
                   [page.pageAggregates],

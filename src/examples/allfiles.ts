@@ -69,10 +69,11 @@ const doWork = async () => {
 
   // write all pages to disk in case something goes wrong, so we don't have to reload everything again
   const json = JSON.stringify(allPages, null, 2);
-  const fileName = `./all-pages.json`;
-  fs.writeFileSync(fileName, json);
+  //const fileName = `./all-pages.json`;
+  //fs.writeFileSync(fileName, json);
 
   const teamBreakdown = figmaCalculator.getBreakDownByTeams(allPages);
+  console.log(JSON.stringify(teamBreakdown));
 };
 
 doWork();
