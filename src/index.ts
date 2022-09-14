@@ -463,7 +463,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
           processedPageStats[team][project] = {
             pages: pages.map((page) => {
               return {
-                name: page.file.name,
+                name: page.pageName,
                 key: page.file.key,
                 last_modified: page.file.last_modified,
                 adoptionPercent: this.getAdoptionPercent(
