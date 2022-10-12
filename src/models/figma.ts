@@ -14,6 +14,10 @@ export interface FigmaSharedNode {
   };
 }
 
+export type HexStyleMap = {
+  [hexColor: string]: { text?: string; fill?: string };
+};
+
 export type StyleBucket = { [key: string]: { [id: string]: FigmaTeamStyle } };
 
 export type ComponentBucket = {

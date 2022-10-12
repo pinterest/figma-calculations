@@ -2,6 +2,7 @@ import {
   FigmaFile,
   FigmaTeamComponent,
   FigmaTeamStyle,
+  HexStyleMap,
   StyleBucket,
 } from "./models/figma";
 import {
@@ -21,6 +22,7 @@ import FigmaDocumentParser from "./parser";
 import {
   generateComponentMap,
   generateStyleBucket,
+  LintCheckOptions,
   runSimilarityChecks,
 } from "./rules";
 
@@ -161,7 +163,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
    */
   getLintResults(
     node: BaseNode,
-    opts?: { styles?: FigmaTeamStyle[]; styleBucket?: StyleBucket }
+    opts?: {
+      styles?: FigmaTeamStyle[];
+      styleBucket?: StyleBucket;
+    } & LintCheckOptions
   ): LintCheck[] {
     let allStyles = this.allStyles || opts?.styles;
 
@@ -173,7 +178,9 @@ export class FigmaCalculator extends FigmaDocumentParser {
         "No style bucket, or array of styles provided to generate lint results"
       );
 
-    return runSimilarityChecks(styleBucket, node);
+    const lintCheckOpts = { hexStyleMap: opts?.hexStyleMap };
+
+    return runSimilarityChecks(styleBucket, node, lintCheckOpts);
   }
 
   static filterHiddenNodes(nodes: BaseNode[]): {

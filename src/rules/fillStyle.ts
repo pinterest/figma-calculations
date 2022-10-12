@@ -1,15 +1,17 @@
-import jp from "jsonpath";
+import jp, { nodes } from "jsonpath";
 
 import { StyleBucket } from "../models/figma";
-import { LintCheck } from "../models/stats";
+import { LintCheck, LintSuggestion } from "../models/stats";
 
-import { isNodeOfTypeAndVisible } from ".";
+import { isNodeOfTypeAndVisible, LintCheckOptions } from ".";
 import { isExactStyleMatch } from "./utils/exact";
 import getPartialStyleMatches from "./utils/partial";
+import rgbToHex from "../utils/rgbToHex";
 
 export default function checkFillStyleMatch(
   styleBucket: StyleBucket,
-  targetNode: BaseNode
+  targetNode: BaseNode,
+  opts?: LintCheckOptions
 ): LintCheck {
   // decrement the count, or increment depending on what we find
   const checkName = "Fill-Style";
@@ -45,6 +47,32 @@ export default function checkFillStyleMatch(
   if (fillTypes.length === 0) {
     // ignore the node, no fill ever existed
     return { checkName, matchLevel: "Skip", suggestions: [] };
+  }
+
+  if (opts?.hexStyleMap) {
+    const { hexStyleMap } = opts;
+
+    const fillRGB = ["r", "g", "b"].map(
+      (letter): number => jp.query(targetNode, `$.fills[0].color.${letter}`)[0]
+    );
+
+    const suggestions: LintSuggestion[] = [];
+
+    // get the hex code
+    const hex = rgbToHex(fillRGB[0], fillRGB[1], fillRGB[2]);
+    if (hexStyleMap[hex]) {
+      const styleKeys = hexStyleMap[hex];
+      const styleKey =
+        targetNode.type === "TEXT" ? styleKeys.text : styleKeys.fill;
+      if (styleKey) {
+        suggestions.push({
+          message: `Similar Color Exists in Library with hex ${hex}`,
+          styleKey,
+        });
+      }
+    }
+
+    return { matchLevel: "Partial", checkName, suggestions };
   }
 
   const { matchLevel, suggestions } = getPartialStyleMatches(

@@ -4,6 +4,7 @@ import {
   ComponentBucket,
   FigmaTeamComponent,
   FigmaTeamStyle,
+  HexStyleMap,
   StyleBucket,
 } from "../models/figma";
 
@@ -12,16 +13,19 @@ import checkFillStyleMatch from "./fillStyle";
 import checkStrokeStyleMatch from "./strokeStyle";
 import checkTextMatch from "./textStyle";
 
+export type LintCheckOptions = { hexStyleMap?: HexStyleMap };
 /**
  * Run through all partial matches, and make exceptions depending on rules
  */
 export const runSimilarityChecks = (
   styleBucket: StyleBucket,
-  targetNode: BaseNode
+  targetNode: BaseNode,
+  opts?: LintCheckOptions
 ): LintCheck[] => {
   const checks: ((
     styleBucket: StyleBucket,
-    targetNode: BaseNode
+    targetNode: BaseNode,
+    opts?: LintCheckOptions
   ) => LintCheck)[] = [
     checkTextMatch,
     checkStrokeStyleMatch,
@@ -30,7 +34,7 @@ export const runSimilarityChecks = (
 
   const results = [];
   for (const check of checks) {
-    const lintCheck = check(styleBucket, targetNode);
+    const lintCheck = check(styleBucket, targetNode, opts);
     results.push(lintCheck);
   }
 
@@ -50,10 +54,13 @@ export function isNodeOfTypeAndVisible(types: string[], node: BaseNode) {
 /**
  *
  * @param styles
- * @returns Object with style name as key and style as value
+ * @returns Object with style type and key as indexer
  * @description Creates a map of styles by name
  */
-export function generateStyleBucket(styles: FigmaTeamStyle[]): StyleBucket {
+export function generateStyleBucket(
+  styles: FigmaTeamStyle[],
+  opts?: { includeNames: boolean }
+): StyleBucket {
   // create hashmap of styles by styleType
   const styleBuckets: StyleBucket = {};
 
@@ -63,7 +70,14 @@ export function generateStyleBucket(styles: FigmaTeamStyle[]): StyleBucket {
     }
 
     styleBuckets[style.style_type][style.key] = style;
+
+    if (opts?.includeNames) {
+      // use the style name as the key
+      // serializing this may create duplicate, in memory, they should ref. the same object
+      styleBuckets[style.style_type][style.name] = style;
+    }
   }
+
   return styleBuckets;
 }
 

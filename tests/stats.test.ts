@@ -14,6 +14,17 @@ jest.setTimeout(300000);
 
 // check if number of processed nodes is what we expect them to be
 
+const HexStyleMap = {
+  "#FFFFF": {
+    text: "24671a3f7ba8e6a760861f9501b53fa3e1b18c40", // Text & Icons/Dark-mode/Default - Mochimalist-white-0'
+    fill: "9ce3e95c3065d6bd3b2086553d4e94e5e29cf82e", // Baseline/Light-mode/UI Background - Mochimalist-white-0
+  },
+  "#00000": {
+    text: "869796997aa6adc4336df44e903c5ce8787cbbf3", // Text & Icons/Light-mode/Default - Cosmicore-gray-900
+    fill: "774cae09471c39640f80ed5b59f2804859709ad9", // Baseline/Dark-mode/UI Background - Cosmicore-gray-900
+  },
+};
+
 const TEST_FILE = "XZe09gY6eNSg4rZHkN8RP2"; // "xSpy5UYEhvte0j3i7E2Hnd" ;
 const TEAM_ID = "626524232805730321";
 const TEAM_IDS = [
@@ -21,24 +32,16 @@ const TEAM_IDS = [
   "969820474577737549",
   "888190986662740847",
   "758073086094656143",
-  "742865047532142301",
+  "626524232805730321",
   "784245363616834937",
   "763841153159625143",
   "763841187386191288",
-  "626524232805730321",
   "763841216024165817",
   "708383139233476090",
   "851831158188134404",
 ];
 
-const FakeFileData = {
-  key: TEST_FILE,
-  name: "Handoff TEST",
-  thumbnail_url: "blah",
-  last_modified: "blah",
-};
-
-const TOTAL_PAGES = 11;
+const TOTAL_PAGES = 12;
 let figmaCalculator: FigmaCalculator;
 
 describe("Do Test File Cases Pass?", () => {
@@ -74,7 +77,16 @@ describe("Do Test File Cases Pass?", () => {
       frameResults[page.name] = [];
 
       for (const node of frameNodes) {
-        const processedNodes = figmaCalculator.processTree(node);
+        const processedNodes = figmaCalculator.processTree(node, {
+          onProcessNode: (node) => {
+            /*
+              Debug function to see output of runs
+              if (page.name === "iOS Handoff 100%") {
+                console.log(node);
+              }
+            */
+          },
+        });
 
         frameResults[page.name].push(processedNodes.aggregateCounts);
       }
@@ -181,5 +193,29 @@ describe("Do Test File Cases Pass?", () => {
         });
       }
     }
+  });
+
+  it("Provides 3 Partial Matches with Hex Style Map", () => {
+    let partialFixes = 0;
+    for (const page of figmaCalculator.getAllPages()) {
+      if (page.name === "Partial Fill Style Test") {
+        FigmaCalculator.FindAll(page, (node) => {
+          const results = figmaCalculator.getLintResults(node, {
+            hexStyleMap: HexStyleMap,
+          });
+
+          for (const result of results) {
+            if (
+              result.checkName === "Fill-Style" &&
+              result.matchLevel === "Partial"
+            ) {
+              partialFixes += 1;
+            }
+          }
+          return false;
+        });
+      }
+    }
+    expect(partialFixes).toBe(2);
   });
 });
