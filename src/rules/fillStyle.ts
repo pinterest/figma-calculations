@@ -6,7 +6,7 @@ import { LintCheck, LintSuggestion } from "../models/stats";
 import { isNodeOfTypeAndVisible, LintCheckOptions } from ".";
 import { isExactStyleMatch } from "./utils/exact";
 import getPartialStyleMatches from "./utils/partial";
-import rgbToHex from "../utils/rgbToHex";
+import figmaRGBToHex from "../utils/rgbToHex";
 
 export default function checkFillStyleMatch(
   styleBucket: StyleBucket,
@@ -59,7 +59,7 @@ export default function checkFillStyleMatch(
     const suggestions: LintSuggestion[] = [];
 
     // get the hex code
-    const hex = rgbToHex(fillRGB[0], fillRGB[1], fillRGB[2]);
+    const hex = figmaRGBToHex(fillRGB[0], fillRGB[1], fillRGB[2]);
     if (hexStyleMap[hex]) {
       const styleKeys = hexStyleMap[hex];
       const styleKey =
@@ -70,9 +70,8 @@ export default function checkFillStyleMatch(
           styleKey,
         });
       }
+      return { matchLevel: "Partial", checkName, suggestions };
     }
-
-    return { matchLevel: "Partial", checkName, suggestions };
   }
 
   const { matchLevel, suggestions } = getPartialStyleMatches(
@@ -94,12 +93,7 @@ export default function checkFillStyleMatch(
         stylePath: "$.fills[0].color.b",
         nodePath: "$.fills[0].color.b",
         matchType: "exact",
-      },
-      {
-        stylePath: "$.fills[0].opacity",
-        nodePath: "$.fills[0].opacity",
-        matchType: "exact",
-      },
+      }
     ],
     targetNode,
     { union: true }

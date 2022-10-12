@@ -48,7 +48,6 @@ export default function getPartialStyleMatches(
           };
         }
       } else {
-        // console.log(targetValue, styleValue);
         if (styleValue.includes(targetValue)) {
           return {
             message: `Possible Gestalt ${
@@ -86,8 +85,9 @@ export default function getPartialStyleMatches(
 
     for (const property of propertiesToCheck) {
       const styleValue = jp.value(styleNode.nodeDetails, property.stylePath);
+
       // skip it
-      if (!styleValue) continue;
+      if (styleValue === undefined || styleValue === null) continue;
 
       // depending on the environment read the right path from the node
       const pathToUse =
@@ -97,7 +97,9 @@ export default function getPartialStyleMatches(
 
       const targetValue = jp.value(targetNode, pathToUse);
 
-      if (!targetValue) continue;
+      if (targetValue === undefined || targetValue === null) continue;
+
+      //  console.log(pathToUse, styleValue, targetValue);
 
       const result = checkPropertyValue(
         property,
