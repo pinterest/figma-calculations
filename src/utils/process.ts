@@ -2,8 +2,17 @@ import { FigmaCalculator } from "..";
 import { FigmaTeamComponent, FigmaTeamStyle } from "../models/figma";
 import { AggregateCounts, LintCheckName, ProcessedNode } from "../models/stats";
 import FigmaDocumentParser from "../parser";
-import { generateStyleBucket, runSimilarityChecks } from "../rules";
+import {
+  generateStyleBucket,
+  generateStyleLookup,
+  LintCheckOptions,
+  runSimilarityChecks,
+} from "../rules";
 import { makePercent } from "./percent";
+
+export type ProcessedNodeOptions = {
+  onProcessNode?: (node: ProcessedNode) => void;
+} & LintCheckOptions;
 
 // returns array of nodes that are in a hidden layer tree
 export const getHiddenNodes = (
@@ -20,15 +29,16 @@ export function getProcessedNodes(
   rootNode: BaseNode,
   components: FigmaTeamComponent[],
   allStyles: FigmaTeamStyle[],
-  onProcessNode?: (node: ProcessedNode) => void
+  opts?: ProcessedNodeOptions
 ) {
   const styleBuckets = generateStyleBucket(allStyles);
+  const styleLookupMap = generateStyleLookup(styleBuckets);
 
   const processedNodes: ProcessedNode[] = [];
 
   const addToProcessedNodes = (node: ProcessedNode) => {
-    if (onProcessNode) {
-      onProcessNode(node);
+    if (opts?.onProcessNode) {
+      opts.onProcessNode(node);
     }
 
     processedNodes.push(node);
@@ -75,7 +85,10 @@ export function getProcessedNodes(
 
   // run lint checks on the remaning nodes
   for (const node of nonLibraryNodes) {
-    const result = runSimilarityChecks(styleBuckets, node);
+    const result = runSimilarityChecks(styleBuckets, node, {
+      styleLookupMap,
+      ...opts,
+    });
 
     addToProcessedNodes({
       id: node.id,

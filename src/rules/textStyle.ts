@@ -1,13 +1,15 @@
 import { StyleBucket } from "../models/figma";
 import { LintCheck } from "../models/stats";
 
-import { isNodeOfTypeAndVisible } from ".";
+import { isNodeOfTypeAndVisible, LintCheckOptions } from ".";
 import { isExactStyleMatch } from "./utils/exact";
-import getPartialStyleMatches from "./utils/partial";
+
+import getStyleLookupMatches from "./utils/lookup";
 
 export default function checkTextMatch(
   styleBucket: StyleBucket,
-  targetNode: BaseNode
+  targetNode: BaseNode,
+  opts?: LintCheckOptions
 ): LintCheck {
   const checkName = "Text-Style";
   // console.log(targetNode);
@@ -27,34 +29,16 @@ export default function checkTextMatch(
     };
   }
 
-  const { matchLevel, suggestions } = getPartialStyleMatches(
-    checkName,
-    styleBucket,
-    "TEXT",
-    [
-      {
-        stylePath: "$.style.fontFamily",
-        nodePath: "$.style.fontFamily",
-        figmaPath: "$.fontName.family",
-        matchType: "exact",
-        removeSpaces: true,
-      },
-      {
-        stylePath: "$.style.fontSize",
-        nodePath: "$.style.fontSize",
-        figmaPath: "$.fontSize",
-        matchType: "exact",
-      },
-      {
-        stylePath: "$.style.fontPostScriptName",
-        nodePath: "$.style.fontPostScriptName",
-        figmaPath: "$.fontName.style",
-        matchType: "includes",
-      },
-    ],
-    targetNode,
-    { union: true }
-  );
+  if (opts?.styleLookupMap) {
+    const { matchLevel, suggestions } = getStyleLookupMatches(
+      checkName,
+      opts.styleLookupMap,
+      "TEXT",
+      targetNode
+    );
 
-  return { checkName, matchLevel, suggestions };
+    return { checkName, matchLevel, suggestions };
+  }
+
+  return { checkName, matchLevel: "None", suggestions: [] };
 }

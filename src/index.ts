@@ -22,12 +22,17 @@ import FigmaDocumentParser from "./parser";
 import {
   generateComponentMap,
   generateStyleBucket,
+  generateStyleLookup,
   LintCheckOptions,
   runSimilarityChecks,
 } from "./rules";
 
 import { makePercent } from "./utils/percent";
-import { getLintCheckPercent, getProcessedNodes } from "./utils/process";
+import {
+  getLintCheckPercent,
+  getProcessedNodes,
+  ProcessedNodeOptions,
+} from "./utils/process";
 import { getFigmaPagesForTeam } from "./utils/teams";
 import { FigmaAPIHelper } from "./webapi";
 
@@ -152,6 +157,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
   }
 
   static generateStyleBucket = generateStyleBucket;
+  static generateStyleLookup = generateStyleLookup;
 
   static generateComponentMap = generateComponentMap;
 
@@ -178,9 +184,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
         "No style bucket, or array of styles provided to generate lint results"
       );
 
-    const lintCheckOpts = { hexStyleMap: opts?.hexStyleMap };
-
-    return runSimilarityChecks(styleBucket, node, lintCheckOpts);
+    return runSimilarityChecks(styleBucket, node, opts);
   }
 
   static filterHiddenNodes(nodes: BaseNode[]): {
@@ -303,16 +307,15 @@ export class FigmaCalculator extends FigmaDocumentParser {
     opts?: {
       components?: FigmaTeamComponent[];
       allStyles?: FigmaTeamStyle[];
-      onProcessNode?: (node: ProcessedNode) => void;
-    }
+    } & ProcessedNodeOptions
   ): ProcessedNodeTree {
-    const { components, allStyles, onProcessNode } = opts || {};
+    const { components, allStyles } = opts || {};
     const { allHiddenNodes, libraryNodes, totalNodes, processedNodes } =
       getProcessedNodes(
         rootNode,
         components || this.components,
         allStyles || this.allStyles,
-        onProcessNode
+        opts
       );
 
     const aggregates: AggregateCounts = {

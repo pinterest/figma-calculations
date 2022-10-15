@@ -19,6 +19,9 @@ export type HexStyleMap = {
 };
 
 export type StyleBucket = { [key: string]: { [id: string]: FigmaTeamStyle } };
+export type StyleLookupMap = {
+  [key: string]: { [id: string]: FigmaTeamStyle[] };
+};
 
 export type ComponentBucket = {
   [key: string]: { name: string };

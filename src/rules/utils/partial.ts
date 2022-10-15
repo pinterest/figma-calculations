@@ -7,6 +7,8 @@ import {
 } from "../../models/figma";
 import { LintCheckName, LintCheck, LintSuggestion } from "../../models/stats";
 
+
+
 /**
  * Check if any sub properties overlap and amtch
  * @param checkName
@@ -26,6 +28,9 @@ export default function getPartialStyleMatches(
   const suggestions: LintSuggestion[] = [];
   const styles = stylesBucket[styleType];
 
+  //return { checkName, matchLevel: "None", suggestions: [] };
+
+  
   const checkPropertyValue = (
     property: PropertyCheck,
     styleValue: any,
@@ -77,6 +82,7 @@ export default function getPartialStyleMatches(
     return undefined;
   };
 
+  
   // check against all of styles, and that field in a style
   for (const styleId of Object.keys(styles)) {
     const styleNode = styles[styleId];
@@ -128,4 +134,5 @@ export default function getPartialStyleMatches(
   }
 
   return { checkName, matchLevel: "Partial", suggestions };
+  
 }

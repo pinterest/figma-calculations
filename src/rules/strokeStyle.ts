@@ -3,7 +3,6 @@ import { LintCheck } from "../models/stats";
 
 import { isNodeOfTypeAndVisible } from ".";
 import { isExactStyleMatch } from "./utils/exact";
-import getPartialStyleMatches from "./utils/partial";
 
 export default function checkStrokeStyleMatch(
   styleBucket: StyleBucket,
@@ -30,6 +29,7 @@ export default function checkStrokeStyleMatch(
       exactMatch: { key: exactMatch.key },
     };
 
+  /* 
   const { matchLevel, suggestions } = getPartialStyleMatches(
     checkName,
     styleBucket,
@@ -58,7 +58,7 @@ export default function checkStrokeStyleMatch(
     ],
     targetNode,
     { union: true }
-  );
+  );*/
 
-  return { checkName, matchLevel, suggestions };
+  return { checkName, matchLevel: "None", suggestions: [] };
 }

@@ -3,10 +3,15 @@ import jp, { nodes } from "jsonpath";
 import { StyleBucket } from "../models/figma";
 import { LintCheck, LintSuggestion } from "../models/stats";
 
-import { isNodeOfTypeAndVisible, LintCheckOptions } from ".";
+import {
+  getStyleLookupDefinitions,
+  isNodeOfTypeAndVisible,
+  LintCheckOptions,
+} from ".";
 import { isExactStyleMatch } from "./utils/exact";
 import getPartialStyleMatches from "./utils/partial";
 import figmaRGBToHex from "../utils/rgbToHex";
+import getStyleLookupMatches from "./utils/lookup";
 
 export default function checkFillStyleMatch(
   styleBucket: StyleBucket,
@@ -49,24 +54,25 @@ export default function checkFillStyleMatch(
     return { checkName, matchLevel: "Skip", suggestions: [] };
   }
 
+  const fillRGB = ["r", "g", "b"].map(
+    (letter): number => jp.query(targetNode, `$.fills[0].color.${letter}`)[0]
+  );
+
+  // get the hex code
+  const hex = figmaRGBToHex(fillRGB[0], fillRGB[1], fillRGB[2]);
+
   if (opts?.hexStyleMap) {
     const { hexStyleMap } = opts;
 
-    const fillRGB = ["r", "g", "b"].map(
-      (letter): number => jp.query(targetNode, `$.fills[0].color.${letter}`)[0]
-    );
-
     const suggestions: LintSuggestion[] = [];
 
-    // get the hex code
-    const hex = figmaRGBToHex(fillRGB[0], fillRGB[1], fillRGB[2]);
     if (hexStyleMap[hex]) {
       const styleKeys = hexStyleMap[hex];
       const styleKey =
         targetNode.type === "TEXT" ? styleKeys.text : styleKeys.fill;
       if (styleKey) {
         suggestions.push({
-          message: `Similar Color Exists in Library with hex ${hex}`,
+          message: `Color Override Exists in Library for hex ${hex}`,
           styleKey,
         });
       }
@@ -74,30 +80,16 @@ export default function checkFillStyleMatch(
     }
   }
 
-  const { matchLevel, suggestions } = getPartialStyleMatches(
-    checkName,
-    styleBucket,
-    "FILL",
-    [
-      {
-        stylePath: "$.fills[0].color.r",
-        nodePath: "$.fills[0].color.r",
-        matchType: "exact",
-      },
-      {
-        stylePath: "$.fills[0].color.g",
-        nodePath: "$.fills[0].color.g",
-        matchType: "exact",
-      },
-      {
-        stylePath: "$.fills[0].color.b",
-        nodePath: "$.fills[0].color.b",
-        matchType: "exact",
-      }
-    ],
-    targetNode,
-    { union: true }
-  );
+  if (opts?.styleLookupMap) {
+    const { matchLevel, suggestions } = getStyleLookupMatches(
+      checkName,
+      opts.styleLookupMap,
+      "FILL",
+      targetNode
+    );
 
-  return { checkName, matchLevel, suggestions };
+    return { checkName, matchLevel, suggestions };
+  }
+
+  return { checkName, matchLevel: "None", suggestions: [] };
 }
