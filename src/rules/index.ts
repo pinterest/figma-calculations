@@ -93,6 +93,9 @@ export function generateStyleBucket(
 }
 
 export function getStyleLookupDefinitions(styleType: FigmaStyleType) {
+  // sometimes the cloud and figma file diverge in naming
+  // figmaPath is the path in the figma file
+  // nodePath is the path in the cloud file (used by default)
   const FillLookupKeys: PropertyCheck[] = [
     {
       stylePath: "$.fills[0].color.r",
@@ -111,7 +114,8 @@ export function getStyleLookupDefinitions(styleType: FigmaStyleType) {
     },
     {
       stylePath: "$.fills[0].color.a",
-      nodePath: "$.fills[0].opacity",
+      nodePath: "$.fills[0].color.a",
+      figmaPath: "$.fills[0].opacity",
       matchType: "exact",
     },
   ];
@@ -166,11 +170,15 @@ export function getStyleLookupKey(
 
       let styleValue = jp.value(node, path);
 
-      if (styleValue !== undefined) {
+      if (
+        styleValue !== undefined &&
+        (typeof styleValue === "string" || typeof styleValue === "number")
+      ) {
         // an option to clean
-        if (check.removeSpaces) {
+        if (check.removeSpaces && typeof styleValue === "string") {
           styleValue = styleValue.split(" ").join("");
         }
+
         key.push(styleValue);
       } else {
         if (nodeType === "styleNode") {

@@ -2,7 +2,12 @@ import { FigmaCalculator, FigmaTeamStyle } from "../src";
 import { AggregateCounts } from "../src/models/stats";
 import fs from "fs";
 import { FIGMA_TOKEN } from "../src/examples/token";
-import { generateStyleBucket, generateStyleLookup } from "../src/rules";
+import {
+  generateStyleBucket,
+  generateStyleLookup,
+  getStyleLookupDefinitions,
+  getStyleLookupKey,
+} from "../src/rules";
 
 jest.setTimeout(300000);
 
@@ -194,10 +199,10 @@ describe("Do Test File Cases Pass?", () => {
   it("Provides 3 Partial Matches with Hex Style Map", () => {
     let partialFixes = 0;
     const styleLookupMap = generateStyleLookup(generateStyleBucket(styles));
+
     for (const page of figmaCalculator.getAllPages()) {
       if (page.name === "Partial Fill Style Test") {
         FigmaCalculator.FindAll(page, (node) => {
-          console.log(node);
           const results = figmaCalculator.getLintResults(node, {
             hexStyleMap: HexStyleMap,
             styleLookupMap,
