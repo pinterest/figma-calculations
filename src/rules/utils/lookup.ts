@@ -15,7 +15,7 @@ import { LintCheckName, LintCheck, LintSuggestion } from "../../models/stats";
 export default function getStyleLookupMatches(
   checkName: LintCheckName,
   stylesLookup: StyleLookupMap,
-  styleType: FigmaStyleType,
+  styleType: FigmaStyleType | "STROKE",
   targetNode: BaseNode
 ): LintCheck {
   const suggestions: LintSuggestion[] = [];
@@ -24,6 +24,11 @@ export default function getStyleLookupMatches(
 
   if (propsToCheck) {
     const key = getStyleLookupKey(propsToCheck, targetNode, "figmaNode");
+
+    // note: figma actually doesn't have a separate STROKE type, so we'll fallback to use the FILL portion of the style lookup
+    if (styleType === "STROKE") {
+      styleType = "FILL";
+    }
 
     if (stylesLookup[styleType][key]) {
       // a list of potential styles that match

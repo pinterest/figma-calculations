@@ -38,7 +38,7 @@ const TEAM_IDS = [
   "851831158188134404",
 ];
 
-const TOTAL_PAGES = 12;
+const TOTAL_PAGES = 13;
 let figmaCalculator: FigmaCalculator;
 
 let styles: FigmaTeamStyle[] = [];
@@ -211,6 +211,33 @@ describe("Do Test File Cases Pass?", () => {
           for (const result of results) {
             if (
               result.checkName === "Fill-Style" &&
+              result.matchLevel === "Partial"
+            ) {
+              partialFixes += 1;
+            }
+          }
+          return false;
+        });
+      }
+    }
+    expect(partialFixes).toBe(3);
+  });
+
+  it("Provides 3 Partial Matches with Stroke Style Map", () => {
+    let partialFixes = 0;
+    const styleLookupMap = generateStyleLookup(generateStyleBucket(styles));
+
+    for (const page of figmaCalculator.getAllPages()) {
+      if (page.name === "Partial Stroke Style Test") {
+        FigmaCalculator.FindAll(page, (node) => {
+          const results = figmaCalculator.getLintResults(node, {
+            hexStyleMap: HexStyleMap,
+            styleLookupMap,
+          });
+
+          for (const result of results) {
+            if (
+              result.checkName === "Stroke-Fill-Style" &&
               result.matchLevel === "Partial"
             ) {
               partialFixes += 1;

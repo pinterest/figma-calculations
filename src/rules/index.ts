@@ -92,7 +92,9 @@ export function generateStyleBucket(
   return styleBuckets;
 }
 
-export function getStyleLookupDefinitions(styleType: FigmaStyleType) {
+export function getStyleLookupDefinitions(
+  styleType: FigmaStyleType | "STROKE"
+) {
   // sometimes the cloud and figma file diverge in naming
   // figmaPath is the path in the figma file
   // nodePath is the path in the cloud file (used by default)
@@ -141,6 +143,32 @@ export function getStyleLookupDefinitions(styleType: FigmaStyleType) {
       matchType: "includes",
     },
   ];
+
+  const StrokeLookupKeys: PropertyCheck[] = [
+    {
+      stylePath: "$.fills[0].color.r",
+      nodePath: "$.strokes[0].color.r",
+      matchType: "exact",
+    },
+    {
+      stylePath: "$.fills[0].color.g",
+      nodePath: "$.strokes[0].color.g",
+      matchType: "exact",
+    },
+    {
+      stylePath: "$.fills[0].color.b",
+      nodePath: "$.strokes[0].color.b",
+      matchType: "exact",
+    },
+    {
+      stylePath: "$.fills[0].color.a",
+      nodePath: "$.strokes[0].color.a",
+      figmaPath: "$.strokes[0].opacity",
+      matchType: "exact",
+    },
+  ];
+
+  if (styleType === "STROKE") return StrokeLookupKeys;
 
   if (styleType === "FILL") return FillLookupKeys;
 
