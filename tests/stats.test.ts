@@ -1,7 +1,13 @@
-import { FigmaCalculator } from "../src";
+import { FigmaCalculator, FigmaTeamStyle } from "../src";
 import { AggregateCounts } from "../src/models/stats";
 import fs from "fs";
 import { FIGMA_TOKEN } from "../src/examples/token";
+import {
+  generateStyleBucket,
+  generateStyleLookup,
+  getStyleLookupDefinitions,
+  getStyleLookupKey,
+} from "../src/rules";
 
 jest.setTimeout(300000);
 
@@ -32,16 +38,17 @@ const TEAM_IDS = [
   "851831158188134404",
 ];
 
-const TOTAL_PAGES = 12;
+const TOTAL_PAGES = 13;
 let figmaCalculator: FigmaCalculator;
 
+let styles: FigmaTeamStyle[] = [];
 describe("Do Test File Cases Pass?", () => {
   beforeAll(async () => {
     figmaCalculator = new FigmaCalculator();
     figmaCalculator.setAPIToken(FIGMA_TOKEN);
     const file = await figmaCalculator.fetchCloudDocument(TEST_FILE);
     const components = await figmaCalculator.loadComponents(TEAM_ID);
-    const styles = await figmaCalculator.loadStyles(TEAM_ID);
+    styles = await figmaCalculator.loadStyles(TEAM_ID);
 
     fs.writeFileSync("../comps.json", JSON.stringify(components));
   });
@@ -151,11 +158,14 @@ describe("Do Test File Cases Pass?", () => {
 
   it("Provides 3 Lint Fixes", () => {
     const frameResults: { [pageName: string]: AggregateCounts[] } = {};
+    const styleLookupMap = generateStyleLookup(generateStyleBucket(styles));
     for (const page of figmaCalculator.getAllPages()) {
       if (page.name === "Partial Text Test") {
         FigmaCalculator.FindAll(page, (node) => {
           if (node.type === "TEXT") {
-            const results = figmaCalculator.getLintResults(node);
+            const results = figmaCalculator.getLintResults(node, {
+              styleLookupMap,
+            });
             if (node.name.includes("Android")) {
               for (const result of results) {
                 if (result.checkName === "Text-Style") {
@@ -188,16 +198,46 @@ describe("Do Test File Cases Pass?", () => {
 
   it("Provides 3 Partial Matches with Hex Style Map", () => {
     let partialFixes = 0;
+    const styleLookupMap = generateStyleLookup(generateStyleBucket(styles));
+
     for (const page of figmaCalculator.getAllPages()) {
       if (page.name === "Partial Fill Style Test") {
         FigmaCalculator.FindAll(page, (node) => {
           const results = figmaCalculator.getLintResults(node, {
             hexStyleMap: HexStyleMap,
+            styleLookupMap,
           });
 
           for (const result of results) {
             if (
               result.checkName === "Fill-Style" &&
+              result.matchLevel === "Partial"
+            ) {
+              partialFixes += 1;
+            }
+          }
+          return false;
+        });
+      }
+    }
+    expect(partialFixes).toBe(3);
+  });
+
+  it("Provides 3 Partial Matches with Stroke Style Map", () => {
+    let partialFixes = 0;
+    const styleLookupMap = generateStyleLookup(generateStyleBucket(styles));
+
+    for (const page of figmaCalculator.getAllPages()) {
+      if (page.name === "Partial Stroke Style Test") {
+        FigmaCalculator.FindAll(page, (node) => {
+          const results = figmaCalculator.getLintResults(node, {
+            hexStyleMap: HexStyleMap,
+            styleLookupMap,
+          });
+
+          for (const result of results) {
+            if (
+              result.checkName === "Stroke-Fill-Style" &&
               result.matchLevel === "Partial"
             ) {
               partialFixes += 1;

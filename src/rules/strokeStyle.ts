@@ -1,13 +1,16 @@
 import { StyleBucket } from "../models/figma";
-import { LintCheck } from "../models/stats";
+import { LintCheck, LintSuggestion } from "../models/stats";
 
-import { isNodeOfTypeAndVisible } from ".";
+import { isNodeOfTypeAndVisible, LintCheckOptions } from ".";
 import { isExactStyleMatch } from "./utils/exact";
-import getPartialStyleMatches from "./utils/partial";
+import getStyleLookupMatches from "./utils/lookup";
+import figmaRGBToHex from "../utils/rgbToHex";
+import jp from "jsonpath";
 
 export default function checkStrokeStyleMatch(
   styleBucket: StyleBucket,
-  targetNode: BaseNode
+  targetNode: BaseNode,
+  opts?: LintCheckOptions
 ): LintCheck {
   // decrement the count, or increment depending on what we find
   const checkName = "Stroke-Fill-Style";
@@ -30,35 +33,42 @@ export default function checkStrokeStyleMatch(
       exactMatch: { key: exactMatch.key },
     };
 
-  const { matchLevel, suggestions } = getPartialStyleMatches(
-    checkName,
-    styleBucket,
-    "FILL",
-    [
-      {
-        stylePath: "$.fills[0].color.r",
-        nodePath: "$.strokes[0].color.r",
-        matchType: "exact",
-      },
-      {
-        stylePath: "$.fills[0].color.g",
-        nodePath: "$.strokes[0].color.g",
-        matchType: "exact",
-      },
-      {
-        stylePath: "$.fills[0].color.b",
-        nodePath: "$.strokes[0].color.b",
-        matchType: "exact",
-      },
-      {
-        stylePath: "$.fills[0].opacity",
-        nodePath: "$.strokes[0].opacity",
-        matchType: "exact",
-      },
-    ],
-    targetNode,
-    { union: true }
+  const fillRGB = ["r", "g", "b"].map(
+    (letter): number => jp.query(targetNode, `$.strokes[0].color.${letter}`)[0]
   );
 
-  return { checkName, matchLevel, suggestions };
+  // get the hex code
+  const hex = figmaRGBToHex(fillRGB[0], fillRGB[1], fillRGB[2]);
+
+  if (opts?.hexStyleMap) {
+    const { hexStyleMap } = opts;
+
+    const suggestions: LintSuggestion[] = [];
+
+    if (hexStyleMap[hex]) {
+      const styleKeys = hexStyleMap[hex];
+      const styleKey =
+        targetNode.type === "TEXT" ? styleKeys.text : styleKeys.fill;
+      if (styleKey) {
+        suggestions.push({
+          message: `Color Override Exists in Library for hex ${hex}`,
+          styleKey,
+        });
+      }
+      return { matchLevel: "Partial", checkName, suggestions };
+    }
+  }
+
+  if (opts?.styleLookupMap) {
+    const { matchLevel, suggestions } = getStyleLookupMatches(
+      checkName,
+      opts.styleLookupMap,
+      "STROKE",
+      targetNode
+    );
+
+    return { checkName, matchLevel, suggestions };
+  }
+
+  return { checkName, matchLevel: "None", suggestions: [] };
 }
