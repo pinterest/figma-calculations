@@ -7,15 +7,26 @@ import { FIGMA_TOKEN } from "./token";
 const figmaCalculator = new FigmaCalculator();
 
 const STYLE_TEAM_ID = "626524232805730321";
+const TEAM_IDS = [
+  "1040347261379002788",
+  "969820474577737549",
+  "888190986662740847",
+  "758073086094656143",
+  "626524232805730321",
+  "784245363616834937",
+  "763841153159625143",
+  "763841187386191288",
+  "763841216024165817",
+  "708383139233476090",
+  "851831158188134404",
+];
 
 // used to fetch styles and components
 figmaCalculator.setAPIToken(FIGMA_TOKEN);
 
 const doWork = async () => {
   // optional: if not in figma plugin environment, load a file with this
-  const { files } = await figmaCalculator.getFilesForTeams([
-    "969820474577737549",
-  ]);
+  const { files } = await figmaCalculator.getFilesForTeams(TEAM_IDS, 2, true);
 
   // load up any style libraries
   const comps = await figmaCalculator.loadComponents(STYLE_TEAM_ID);
