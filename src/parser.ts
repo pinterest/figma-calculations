@@ -84,6 +84,36 @@ export default class FigmaDocumentParser {
     return matches;
   }
 
+  static RemoveNode(root: BaseNode, nodeId: string) {
+    // running in the figma context
+    if (typeof figma !== undefined) {
+      const node = figma.getNodeById(nodeId);
+      if (node) {
+        node.remove();
+      }
+    }
+
+    function recursivelyRemove(node: any) {
+      if (!node.children) return;
+
+      if (node.children.length == 0) return;
+
+      for (let i = 0; i < node.children.length; i++) {
+        const child = node.children[i];
+
+        if (child.id == nodeId) {
+          // remove the node
+          (node.children as BaseNode[]).splice(i, 1);
+          return;
+        } else {
+          recursivelyRemove(child);
+        }
+      }
+    }
+
+    recursivelyRemove(root);
+  }
+
   findAll = FigmaDocumentParser.FindAll;
   findChildren = FigmaDocumentParser.FindChildren;
 }

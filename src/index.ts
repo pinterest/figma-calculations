@@ -26,6 +26,7 @@ import {
   LintCheckOptions,
   runSimilarityChecks,
 } from "./rules";
+import LintCleaner from "./rules/cleaners";
 
 import { makePercent } from "./utils/percent";
 import {
@@ -39,6 +40,7 @@ import { FigmaAPIHelper } from "./webapi";
 // exporting the types to reuse
 export * from "./models/stats";
 export * from "./models/figma";
+export * from "./rules/cleaners";
 
 export class FigmaCalculator extends FigmaDocumentParser {
   components: FigmaTeamComponent[] = [];
@@ -543,4 +545,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
       throw ex;
     }
   }
+
+  /**
+   * Runs a set of cleanup functions like removing unused nodes and fills to cleanup a file.
+   * WARNING: Running this in a Figma Context will modify your files! Run figma.commitUndo prior
+   */
+  cleanupTree = LintCleaner.run;
 }
