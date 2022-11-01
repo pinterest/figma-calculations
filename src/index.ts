@@ -372,7 +372,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
   getAdoptionPercent(
     aggregates: AggregateCounts[],
-    opts?: { includeMatchingText: boolean }
+    opts?: { includeMatchingText?: boolean; includePartialText?: boolean }
   ) {
     const allTotals = {
       totalNodesOnPage: 0,
@@ -388,6 +388,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
       if (checks["Text-Style"] && opts && opts.includeMatchingText) {
         allTotals.totalMatchingText += checks["Text-Style"].full;
+      }
+
+      if (checks["Text-Style"] && opts && opts.includeMatchingText) {
+        allTotals.totalMatchingText += checks["Text-Style"].partial;
       }
     }
 
