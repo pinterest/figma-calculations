@@ -1,15 +1,19 @@
+
+**Disclaimer:**
+> APIs are subject to change as we continue to make progress. The source code will eventually be open-sourced.
+
 ## Figma Calculations
 
 Figma calculations is a library that takes in a Figma file and returns a few actionable statistics to drive adoption and consistent usage of your design system.
 
 You can use this library from either the cloud or a local Figma plugin.
 
-If you don't want to write your own code, try it out in this [playground](Test)
+If you don't want to write your own code, try it out in this [playground](https://replit.com/@RaviLingineni/figma-adoption#index.ts)
 
 ### Features
 
 - Get percent of partial and full Text, Color style matches
-- Get percent of Library Adoption in a file
+- Get percent of Style Library Adoption in a file
 - Calculate Team Level Breakdown of Adoption
 
 ### Usage
@@ -23,7 +27,6 @@ const figmaCalculator = new FigmaCalculator();
 figmaCalculator.setAPIToken("FIGMA API TOKEN");
 
 const doWork = async () => {
-  // optional: if not in figma plugin environment, load a file with this
   const files = await figmaCalculator.getFilesForTeams([
     "TEAM_ID_1",
     "TEAM_ID_2",
@@ -48,9 +51,10 @@ const doWork = async () => {
 
     // run through all of the pages and process them
     for (const page of figmaCalculator.getAllPages()) {
+      // recursively run through and process the notes
       const processedNodes = figmaCalculator.processTree(page);
 
-      // example: show the text linting results and suggestions
+      // log out the text linting results and suggestions
       if (check.checkName === "Text-Style" && check.matchLevel === "Partial") {
         console.log(check.suggestions);
       }
@@ -77,4 +81,4 @@ const doWork = async () => {
 
 ### How we calculate adoption
 
-Read our [blog post](#) on how we calculate design adoption at Pinterest.
+Read our  blog post (to-be-published) on how we calculate design adoption.
