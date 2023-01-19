@@ -39,6 +39,12 @@ export type TeamPages = {
   [projectName: string]: { [teamName: string]: { pages: ProcessedPage[] } };
 };
 
+export type AdoptionCalculationOptions = {
+  includeMatchingText?: boolean;
+  includePartialText?: boolean;
+  includePartialFills?: boolean;
+};
+
 export type LintCheckName = "Text-Style" | "Fill-Style" | "Stroke-Fill-Style";
 
 export type MatchLevel = "None" | "Partial" | "Full" | "Skip";

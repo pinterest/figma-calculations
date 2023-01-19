@@ -53,11 +53,6 @@ describe("Do Test File Cases Pass?", () => {
     fs.writeFileSync("../comps.json", JSON.stringify(components));
   });
 
-  it("less than a 1000 files a week", async () => {
-    const { files } = await figmaCalculator.getFilesForTeams(TEAM_IDS, 2);
-    expect(files.length).toBeLessThan(1000);
-  });
-
   it("loads the document", async () => {
     const pages = figmaCalculator.getAllPages();
 

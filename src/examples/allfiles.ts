@@ -26,7 +26,7 @@ figmaCalculator.setAPIToken(FIGMA_TOKEN);
 
 const doWork = async () => {
   // optional: if not in figma plugin environment, load a file with this
-  const { files } = await figmaCalculator.getFilesForTeams(TEAM_IDS, 2, true);
+  const { files } = await figmaCalculator.getFilesForTeams(TEAM_IDS, 2, false);
 
   // load up any style libraries
   const comps = await figmaCalculator.loadComponents(STYLE_TEAM_ID);

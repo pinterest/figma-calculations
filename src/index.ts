@@ -2,14 +2,13 @@ import {
   FigmaFile,
   FigmaTeamComponent,
   FigmaTeamStyle,
-  HexStyleMap,
   StyleBucket,
 } from "./models/figma";
 import {
+  AdoptionCalculationOptions,
   AggregateCounts,
   LintCheck,
   LintCheckPercent,
-  ProcessedNode,
   ProcessedNodeTree,
   ProcessedPage,
   ProcessedPageBreakdown,
@@ -374,7 +373,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
   getAdoptionPercent(
     aggregates: AggregateCounts[],
-    opts?: { includeMatchingText?: boolean; includePartialText?: boolean }
+    opts?: AdoptionCalculationOptions
   ) {
     const allTotals = {
       totalNodesOnPage: 0,
@@ -392,7 +391,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
         allTotals.totalMatchingText += checks["Text-Style"].full;
       }
 
-      if (checks["Text-Style"] && opts && opts.includeMatchingText) {
+      if (checks["Text-Style"] && opts && opts.includePartialText) {
         allTotals.totalMatchingText += checks["Text-Style"].partial;
       }
     }
@@ -409,16 +408,26 @@ export class FigmaCalculator extends FigmaDocumentParser {
    * Get the percents of text style usage in files
    * @param processedNodes - array of nodes that have been processed
    */
-  getTextStylePercentage(processedNodes: AggregateCounts[]): LintCheckPercent {
-    return getLintCheckPercent("Text-Style", processedNodes);
+  getTextStylePercentage(
+    processedNodes: AggregateCounts[],
+    opts?: AdoptionCalculationOptions
+  ): LintCheckPercent {
+    return getLintCheckPercent("Text-Style", processedNodes, {
+      includePartials: opts?.includePartialText || false,
+    });
   }
 
   /**
    * Get the percents of fill style usage in files
    * @param processedNodes - array of nodes that have been processed
    */
-  getFillStylePercent(processedNodes: AggregateCounts[]): LintCheckPercent {
-    return getLintCheckPercent("Fill-Style", processedNodes);
+  getFillStylePercent(
+    processedNodes: AggregateCounts[],
+    opts?: AdoptionCalculationOptions
+  ): LintCheckPercent {
+    return getLintCheckPercent("Fill-Style", processedNodes, {
+      includePartials: opts?.includePartialFills || false,
+    });
   }
 
   /**
@@ -427,7 +436,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
    */
   getBreakDownByTeams(
     pages: ProcessedPage[],
-    opts?: { includeMatchingText: boolean }
+    opts?: AdoptionCalculationOptions
   ): {
     projects: ProcessedProjectBreakdown;
     teams: ProcessedTeamBreakdown;
@@ -487,10 +496,14 @@ export class FigmaCalculator extends FigmaDocumentParser {
                   opts
                 ),
                 lintPercentages: {
-                  "Text-Style": this.getTextStylePercentage([
-                    page.pageAggregates,
-                  ]),
-                  "Fill-Style": this.getFillStylePercent([page.pageAggregates]),
+                  "Text-Style": this.getTextStylePercentage(
+                    [page.pageAggregates],
+                    opts
+                  ),
+                  "Fill-Style": this.getFillStylePercent(
+                    [page.pageAggregates],
+                    opts
+                  ),
                 },
               };
             }),
@@ -504,9 +517,13 @@ export class FigmaCalculator extends FigmaDocumentParser {
             ),
             lintPercentages: {
               "Text-Style": this.getTextStylePercentage(
-                allProjectProcessedNodes
+                allProjectProcessedNodes,
+                opts
               ),
-              "Fill-Style": this.getFillStylePercent(allProjectProcessedNodes),
+              "Fill-Style": this.getFillStylePercent(
+                allProjectProcessedNodes,
+                opts
+              ),
             },
           };
 
@@ -519,8 +536,8 @@ export class FigmaCalculator extends FigmaDocumentParser {
         processedTeamStats[team] = {
           adoptionPercent: this.getAdoptionPercent(teamProcessedNodes, opts),
           lintPercentages: {
-            "Text-Style": this.getTextStylePercentage(teamProcessedNodes),
-            "Fill-Style": this.getFillStylePercent(teamProcessedNodes),
+            "Text-Style": this.getTextStylePercentage(teamProcessedNodes, opts),
+            "Fill-Style": this.getFillStylePercent(teamProcessedNodes, opts),
           },
         };
         allProcessedNodes = allProcessedNodes.concat(teamProcessedNodes);
@@ -530,8 +547,8 @@ export class FigmaCalculator extends FigmaDocumentParser {
       const totals: ProcessedPercents = {
         adoptionPercent: this.getAdoptionPercent(allProcessedNodes, opts),
         lintPercentages: {
-          "Text-Style": this.getTextStylePercentage(allProcessedNodes),
-          "Fill-Style": this.getFillStylePercent(allProcessedNodes),
+          "Text-Style": this.getTextStylePercentage(allProcessedNodes, opts),
+          "Fill-Style": this.getFillStylePercent(allProcessedNodes, opts),
         },
       };
 

@@ -1,6 +1,11 @@
 import { FigmaCalculator } from "..";
 import { FigmaTeamComponent, FigmaTeamStyle } from "../models/figma";
-import { AggregateCounts, LintCheckName, ProcessedNode } from "../models/stats";
+import {
+  AdoptionCalculationOptions,
+  AggregateCounts,
+  LintCheckName,
+  ProcessedNode,
+} from "../models/stats";
 import FigmaDocumentParser from "../parser";
 import {
   generateStyleBucket,
@@ -110,7 +115,8 @@ export function getProcessedNodes(
 
 export function getLintCheckPercent(
   checkName: LintCheckName,
-  aggregates: AggregateCounts[]
+  aggregates: AggregateCounts[],
+  opts?: { includePartials: boolean }
 ) {
   const allTotals = {
     totalNodes: 0,
@@ -125,6 +131,10 @@ export function getLintCheckPercent(
       const results = checks[checkName]!;
       allTotals.totalFullMatch += results.full;
       allTotals.totalPartialMatch += results.partial;
+
+      if (opts && opts.includePartials) {
+        allTotals.totalFullMatch += results.partial;
+      }
       allTotals.totalNodes += results.partial + results.full + results.none;
     }
   }

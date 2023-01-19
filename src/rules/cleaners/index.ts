@@ -14,8 +14,8 @@ export class LintCleaner {
   static run(startNode: BaseNode) {
     removeEmptyFramesAndGroups(startNode);
     removeTransparentNodes(startNode);
-    removeHiddenNodes(startNode);
-    removeNodesOutsideFrameBounds(startNode);
+    // removeHiddenNodes(startNode);
+    // removeNodesOutsideFrameBounds(startNode);
   }
 }
 
