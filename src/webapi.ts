@@ -4,6 +4,7 @@ import axios from "axios";
 
 import {
   FigmaFile,
+  FigmaImages,
   FigmaPartialFile,
   FigmaSharedNode,
   FigmaTeamComponent,
@@ -61,6 +62,20 @@ export class FigmaAPIHelper {
       },
     });
     const data = resp.data as FigmaFile;
+    return data;
+  }
+
+  static async getImages(
+    fileKey: string,
+    imageIds: string[],
+    format: 'jpg' | 'png' | 'svg' | 'pdf'
+  ): Promise<FigmaImages> {
+    const resp = await axios.get(`${BASE_URL}/images/${fileKey}?format=${format}&ids=${imageIds.join(',')}`, {
+      headers: {
+        "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
+      },
+    });
+    const data = resp.data as FigmaImages;
     return data;
   }
 

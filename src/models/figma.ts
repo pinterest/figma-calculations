@@ -79,6 +79,12 @@ export interface FigmaFile {
   mainFileKey: string;
 }
 
+export interface FigmaImages {
+  err?: string,
+  images: Record<string, string>, // Image ID -> Image URL
+  status?: number
+}
+
 export interface FigmaVersion {
   id: string;
   created_at: string;
