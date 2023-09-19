@@ -42,7 +42,7 @@ const testNodes: any[] = [
       {
         "type": "SOLID",
         "visible": true,
-        "opacity": 1,
+        "opacity": 0.5,
         "blendMode": "NORMAL",
         "color": {
           "r": 0.8509804010391235,
