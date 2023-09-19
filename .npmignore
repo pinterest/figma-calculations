@@ -1,5 +1,6 @@
 .editorconfig
 .github
+.jest.config.ts
 tests/*
 src/*
 dist/examples/*
