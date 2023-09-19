@@ -36,7 +36,7 @@ const testNodes: any[] = [
     type: 'RECTANGLE',
     name: "Test Rectangle w/ non-matching fills",
     visible: true,
-    opacity: 1, // Opacity of the _layer_. Should be used to match for linting
+    opacity: 1, // Opacity of the _layer_. Should NOT be used to match for linting
     fills: [
       {
         "type": "SOLID",
@@ -70,7 +70,7 @@ const testNodes: any[] = [
     type: 'RECTANGLE',
     name: "Test Rectangle: Black fill w/ 100% opacity",
     visible: true,
-    opacity: 1, // Opacity of the _layer_. Should be used to match for linting
+    opacity: 1, // Opacity of the _layer_. Should NOT be used to match for linting
     fills: [
       {
         "type": "SOLID",
@@ -91,7 +91,7 @@ const testNodes: any[] = [
     type: 'RECTANGLE',
     name: "Test Rectangle: Black fill w/ 0% opacity",
     visible: true,
-    opacity: 1, // Opacity of the _layer_. Should be used to match for linting
+    opacity: 1, // Opacity of the _layer_. Should NOT be used to match for linting
     fills: [
       {
         "type": "SOLID",
@@ -112,7 +112,7 @@ const testNodes: any[] = [
     type: 'RECTANGLE',
     name: "Test Rectangle: Pinterest Brand Red background fill",
     visible: true,
-    opacity: 1, // Opacity of the _layer_. Should be used to match for linting
+    opacity: 1, // Opacity of the _layer_. Should NOT be used to match for linting
     fills: [
       {
         "type": "SOLID",
