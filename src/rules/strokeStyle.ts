@@ -4,7 +4,7 @@ import { LintCheck, LintSuggestion } from "../models/stats";
 import { isNodeOfTypeAndVisible, LintCheckOptions } from ".";
 import { isExactStyleMatch } from "./utils/exact";
 import getStyleLookupMatches from "./utils/lookup";
-import figmaRGBToHex from "../utils/rgbToHex";
+import { figmaRGBToHex } from "../utils/rgbToHex";
 import jp from "jsonpath";
 
 export default function checkStrokeStyleMatch(
@@ -33,15 +33,15 @@ export default function checkStrokeStyleMatch(
       exactMatch: { key: exactMatch.key },
     };
 
-  const fillRGB = ["r", "g", "b"].map(
-    (letter): number => jp.query(targetNode, `$.strokes[0].color.${letter}`)[0]
-  );
-
-  // get the hex code
-  const hex = figmaRGBToHex(fillRGB[0], fillRGB[1], fillRGB[2]);
-
   if (opts?.hexStyleMap) {
     const { hexStyleMap } = opts;
+
+    const fillRGB = ["r", "g", "b"].map(
+      (letter): number => jp.query(targetNode, `$.strokes[0].color.${letter}`)[0]
+    );
+
+    // get the hex code
+    const hex = figmaRGBToHex({ r: fillRGB[0], g: fillRGB[1], b: fillRGB[2] }).toUpperCase();
 
     const suggestions: LintSuggestion[] = [];
 

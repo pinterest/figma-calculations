@@ -10,7 +10,7 @@ import {
 } from ".";
 import { isExactStyleMatch } from "./utils/exact";
 import getPartialStyleMatches from "./utils/partial";
-import figmaRGBToHex from "../utils/rgbToHex";
+import { figmaRGBToHex } from "../utils/rgbToHex";
 import getStyleLookupMatches from "./utils/lookup";
 
 export default function checkFillStyleMatch(
@@ -54,15 +54,15 @@ export default function checkFillStyleMatch(
     return { checkName, matchLevel: "Skip", suggestions: [] };
   }
 
-  const fillRGB = ["r", "g", "b"].map(
-    (letter): number => jp.query(targetNode, `$.fills[0].color.${letter}`)[0]
-  );
-
-  // get the hex code
-  const hex = figmaRGBToHex(fillRGB[0], fillRGB[1], fillRGB[2]);
-
   if (opts?.hexStyleMap) {
     const { hexStyleMap } = opts;
+
+    const fillRGB = ["r", "g", "b"].map(
+      (letter): number => jp.query(targetNode, `$.fills[0].color.${letter}`)[0]
+    );
+
+    // get the hex code
+    const hex = figmaRGBToHex({ r: fillRGB[0], g: fillRGB[1], b: fillRGB[2] }).toUpperCase();
 
     const suggestions: LintSuggestion[] = [];
 

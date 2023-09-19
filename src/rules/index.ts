@@ -16,7 +16,6 @@ import jp from "jsonpath";
 import checkFillStyleMatch from "./fillStyle";
 import checkStrokeStyleMatch from "./strokeStyle";
 import checkTextMatch from "./textStyle";
-import figmaRGBToHex from "../utils/rgbToHex";
 
 /**
  * styleLookupMap - required for partial matches
