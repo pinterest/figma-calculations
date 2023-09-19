@@ -19,7 +19,7 @@ import {
 export class FigmaAPIHelper {
   static API_TOKEN: string;
 
-  static setToken(token: string) {
+  static setToken(token: string): void {
     FigmaAPIHelper.API_TOKEN = token;
   }
 
@@ -41,7 +41,7 @@ export class FigmaAPIHelper {
     return projects;
   }
 
-  static async getProjectFiles(projectId: string) {
+  static async getProjectFiles(projectId: string): Promise<FigmaPartialFile[]> {
     let files: FigmaPartialFile[] = [];
     const resp = await axios.get(`${BASE_URL}/projects/${projectId}/files`, {
       headers: {
@@ -159,7 +159,7 @@ export class FigmaAPIHelper {
   }
 
   static async getTeamStyles(teamId: string): Promise<FigmaTeamStyle[]> {
-    let styles: FigmaSharedNode[] = [];
+    let styles: FigmaTeamStyle[] = [];
 
     let nextCursor = undefined;
 
@@ -180,7 +180,7 @@ export class FigmaAPIHelper {
       nextCursor = metadata.cursor?.after;
 
       if (!data.error && metadata.styles) {
-        styles = styles.concat(metadata.styles as FigmaSharedNode[]);
+        styles = styles.concat(metadata.styles as FigmaTeamStyle[]);
       }
     } while (nextCursor);
 
@@ -203,7 +203,7 @@ export class FigmaAPIHelper {
     return extendedStyles;
   }
 
-  static async getFileComponents(fileKeys: string[]) {
+  static async getFileComponents(fileKeys: string[]): Promise<FigmaTeamComponent[]> {
     let components: FigmaTeamComponent[] = [];
     for (const fileId of fileKeys) {
       const resp = await axios.get(`${BASE_URL}/files/${fileId}/components`, {
@@ -221,8 +221,8 @@ export class FigmaAPIHelper {
     return components;
   }
 
-  static async getFileStyles(fileKeys: string[]) {
-    let styles: FigmaSharedNode[] = [];
+  static async getFileStyles(fileKeys: string[]): Promise<FigmaTeamStyle[]> {
+    let styles: FigmaTeamStyle[] = [];
     for (const fileId of fileKeys) {
       const resp = await axios.get(`${BASE_URL}/files/${fileId}/styles`, {
         headers: {
@@ -231,7 +231,7 @@ export class FigmaAPIHelper {
       });
       const data = resp.data as any;
       if (!data.error && data.meta.styles) {
-        styles = styles.concat(data.meta.styles as FigmaSharedNode[]);
+        styles = styles.concat(data.meta.styles as FigmaTeamStyle[]);
       }
     }
 
@@ -270,9 +270,9 @@ export class FigmaAPIHelper {
   /**
    * Breaks a list of styles into a relevant file key with styles so we can lookup by file
    */
-  static createFileBuckets(sharedNodes: FigmaSharedNode[]) {
+  static createFileBuckets(sharedNodes: FigmaTeamStyle[]) {
     const fileBuckets: { [key: string]: string[] } = {};
-    const nodeIdMap: { [id: string]: FigmaSharedNode } = {};
+    const nodeIdMap: { [id: string]: FigmaTeamStyle } = {};
     for (const style of sharedNodes) {
       if (!fileBuckets[style.file_key]) {
         fileBuckets[style.file_key] = [];
