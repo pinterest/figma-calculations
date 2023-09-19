@@ -56,27 +56,35 @@ export default function checkFillStyleMatch(
 
   if (opts?.hexStyleMap) {
     const { hexStyleMap } = opts;
+    const fillProps = getStyleLookupDefinitions("FILL");
 
-    const fillRGB = ["r", "g", "b"].map(
-      (letter): number => jp.query(targetNode, `$.fills[0].color.${letter}`)[0]
-    );
+    if (fillProps) {
+      const [r, g, b, a] = fillProps.map(prop => {
+        const pathToUse =
+          typeof figma === "undefined"
+            ? prop.nodePath
+            : prop.figmaPath || prop.nodePath;
 
-    // get the hex code
-    const hex = figmaRGBToHex({ r: fillRGB[0], g: fillRGB[1], b: fillRGB[2] }).toUpperCase();
+        return jp.query(targetNode, pathToUse)[0];
+      });
 
-    const suggestions: LintSuggestion[] = [];
+      // get the hex code
+      const hex = figmaRGBToHex({ r, g, b, a }).toUpperCase();
 
-    if (hexStyleMap[hex]) {
-      const styleKeys = hexStyleMap[hex];
-      const styleKey =
-        targetNode.type === "TEXT" ? styleKeys.text : styleKeys.fill;
-      if (styleKey) {
-        suggestions.push({
-          message: `Color Override Exists in Library for hex ${hex}`,
-          styleKey,
-        });
+      const suggestions: LintSuggestion[] = [];
+
+      if (hexStyleMap[hex]) {
+        const styleKeys = hexStyleMap[hex];
+        const styleKey =
+          targetNode.type === "TEXT" ? styleKeys.text : styleKeys.fill;
+        if (styleKey) {
+          suggestions.push({
+            message: `Color Override Exists in Library for hex ${hex}`,
+            styleKey,
+          });
+        }
+        return { matchLevel: "Partial", checkName, suggestions };
       }
-      return { matchLevel: "Partial", checkName, suggestions };
     }
   }
 
