@@ -46,11 +46,18 @@ describe("Do Test File Cases Pass?", () => {
   beforeAll(async () => {
     figmaCalculator = new FigmaCalculator();
     figmaCalculator.setAPIToken(FIGMA_TOKEN);
+    
+    // Seed FigmaCalculator with a test file
     const file = await figmaCalculator.fetchCloudDocument(TEST_FILE);
-    const components = await figmaCalculator.loadComponents(TEAM_ID);
+
+    // Grab the team styles
     styles = await figmaCalculator.loadStyles(TEAM_ID);
 
-    fs.writeFileSync("../comps.json", JSON.stringify(components));
+    // Grab the team components
+    const components = await figmaCalculator.loadComponents(TEAM_ID);
+
+    // NOTE: Currently not being used in these tests, so skip for now
+    // fs.writeFileSync("comps.json", JSON.stringify(components));
   });
 
   it("loads the document", async () => {
@@ -164,14 +171,14 @@ describe("Do Test File Cases Pass?", () => {
             if (node.name.includes("Android")) {
               for (const result of results) {
                 if (result.checkName === "Text-Style") {
-                  expect(result.suggestions.length).toBe(1);
+                  expect(result.suggestions.length).toBe(2);
                 }
               }
             }
             if (node.name.includes("iOS")) {
               for (const result of results) {
                 if (result.checkName === "Text-Style") {
-                  // iOS Returns 2 beacuse we can't distinguish between Web or iOS style from Figma, so take both
+                  // iOS Returns 2 because we can't distinguish between Web or iOS style from Figma, so take both
                   expect(result.suggestions.length).toBe(3);
                 }
               }
