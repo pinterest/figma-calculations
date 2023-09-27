@@ -2,16 +2,11 @@ export interface FigmaSharedNode {
   key: string;
   file_key: string;
   node_id: string;
-  thumbnail_url: string;
+  thumbnail_url?: string;
   name: string;
   description: string;
   updated_at: string;
   created_at: string;
-  containing_frame: {
-    name: string;
-    nodeId?: string;
-    pageName?: string;
-  };
 }
 
 export type HexStyleMap = {
@@ -36,13 +31,28 @@ export type PropertyCheck = {
   removeSpaces?: boolean;
 };
 
+export interface FigmaTeamUser {
+  id: string;
+  handle: string;
+  img_url: string;
+}
+
 export interface FigmaTeamComponent extends FigmaSharedNode {
-  user: { id: string; handle: string; img_url: string };
+  user?: FigmaTeamUser;
+  containing_frame: {
+    name: string;
+    nodeId?: string;
+    backgroundColorString?: string;
+    pageId?: string;
+    pageName?: string;
+  };
 }
 
 export type FigmaStyleType = "FILL" | "TEXT" | "EFFECT" | "GRID";
 export interface FigmaTeamStyle extends FigmaSharedNode {
   style_type: FigmaStyleType;
+  sort_position: string;
+  user?: FigmaTeamUser;
   nodeDetails: any;
 }
 

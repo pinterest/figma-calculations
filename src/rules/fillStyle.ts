@@ -10,7 +10,7 @@ import {
 } from ".";
 import { isExactStyleMatch } from "./utils/exact";
 import getPartialStyleMatches from "./utils/partial";
-import figmaRGBToHex from "../utils/rgbToHex";
+import { figmaRGBToHex } from "../utils/rgbToHex";
 import getStyleLookupMatches from "./utils/lookup";
 
 export default function checkFillStyleMatch(
@@ -54,29 +54,37 @@ export default function checkFillStyleMatch(
     return { checkName, matchLevel: "Skip", suggestions: [] };
   }
 
-  const fillRGB = ["r", "g", "b"].map(
-    (letter): number => jp.query(targetNode, `$.fills[0].color.${letter}`)[0]
-  );
-
-  // get the hex code
-  const hex = figmaRGBToHex(fillRGB[0], fillRGB[1], fillRGB[2]);
-
   if (opts?.hexStyleMap) {
     const { hexStyleMap } = opts;
+    const fillProps = getStyleLookupDefinitions("FILL");
 
-    const suggestions: LintSuggestion[] = [];
+    if (fillProps) {
+      const [r, g, b, a] = fillProps.map(prop => {
+        const pathToUse =
+          typeof figma === "undefined"
+            ? prop.nodePath
+            : prop.figmaPath || prop.nodePath;
 
-    if (hexStyleMap[hex]) {
-      const styleKeys = hexStyleMap[hex];
-      const styleKey =
-        targetNode.type === "TEXT" ? styleKeys.text : styleKeys.fill;
-      if (styleKey) {
-        suggestions.push({
-          message: `Color Override Exists in Library for hex ${hex}`,
-          styleKey,
-        });
+        return jp.query(targetNode, pathToUse)[0];
+      });
+
+      // get the hex code
+      const hex = figmaRGBToHex({ r, g, b, a }).toUpperCase();
+
+      const suggestions: LintSuggestion[] = [];
+
+      if (hexStyleMap[hex]) {
+        const styleKeys = hexStyleMap[hex];
+        const styleKey =
+          targetNode.type === "TEXT" ? styleKeys.text : styleKeys.fill;
+        if (styleKey) {
+          suggestions.push({
+            message: `Color Override Exists in Library for hex ${hex}`,
+            styleKey,
+          });
+        }
+        return { matchLevel: "Partial", checkName, suggestions };
       }
-      return { matchLevel: "Partial", checkName, suggestions };
     }
   }
 

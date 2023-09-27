@@ -99,5 +99,6 @@
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
 
-  "include": ["src", "tests/allfiles.ts"]
+  "include": ["src"],
+  "exclude": ["tests", "**/*.test.ts", "**/*.test.tsx", "**/*.mock.ts"]
 }
