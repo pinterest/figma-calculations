@@ -1,3 +1,6 @@
+// Types for the Figma REST API, since they don't yet publish a schema for it:
+// https://forum.figma.com/t/where-can-i-find-the-rest-api-schema/1194
+
 export interface FigmaSharedNode {
   key: string;
   file_key: string;
@@ -105,4 +108,54 @@ export interface FigmaVersion {
     handle: string;
     img_url: string;
   };
+}
+
+// Variables
+interface FigmaVariableBase {
+  readonly id: string
+  readonly key: string
+  name: string
+  readonly variableCollectionId: string
+  readonly resolvedType: VariableResolvedDataType
+}
+
+export interface FigmaLocalVariable extends FigmaVariableBase {
+  description: string
+  hiddenFromPublishing: boolean
+  readonly remote: boolean
+  readonly valuesByMode: {
+    [modeId: string]: VariableValue
+  }
+  scopes: Array<VariableScope>
+  readonly codeSyntax: {
+    [platform in CodeSyntaxPlatform]?: string
+  }
+}
+
+export interface FigmaPublishedVariable extends FigmaVariableBase {
+  subscribed_id: string
+  readonly updatedAt: string;
+}
+
+// Variable Collections
+interface FigmaVariableCollectionBase {
+  readonly id: string
+  readonly key: string
+  name: string
+}
+
+export interface FigmaLocalVariableCollection extends FigmaVariableCollectionBase {
+  hiddenFromPublishing: boolean
+  readonly remote: boolean
+  readonly modes: Array<{
+    modeId: string
+    name: string
+  }>
+  readonly defaultModeId: string
+  readonly variableIds: string[]
+}
+
+export interface FigmaPublishedVariableCollection extends FigmaVariableCollectionBase {
+  subscribed_id: string
+  readonly updatedAt: string;
 }

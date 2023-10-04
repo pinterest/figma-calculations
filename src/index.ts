@@ -157,6 +157,16 @@ export class FigmaCalculator extends FigmaDocumentParser {
     return this.allStyles;
   }
 
+  /**
+   * Load the local/published [:TODO:] variables from the given files
+   *@param fileIds - the file ids to load variables from
+   */
+  async loadVariables(fileIds: string[]): Promise<void> {
+    // :TODO: return some or all of this
+    await FigmaAPIHelper.getFileLocalVariables(fileIds);
+    await FigmaAPIHelper.getFilePublishedVariables(fileIds);
+  }
+
   static generateStyleBucket = generateStyleBucket;
   static generateStyleLookup = generateStyleLookup;
 

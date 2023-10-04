@@ -6,11 +6,14 @@ import {
   FigmaFile,
   FigmaImages,
   FigmaPartialFile,
-  FigmaSharedNode,
   FigmaTeamComponent,
   FigmaTeamStyle,
   FigmaProjectDetails,
   FigmaVersion,
+  FigmaLocalVariable,
+  FigmaLocalVariableCollection,
+  FigmaPublishedVariable,
+  FigmaPublishedVariableCollection,
 } from "./models/figma";
 
 /**
@@ -251,6 +254,46 @@ export class FigmaAPIHelper {
     }
 
     return extendedStyles;
+  }
+
+  static async getFileLocalVariables(fileKeys: string[]): Promise<void> {
+    let variables: FigmaLocalVariable[] = [];
+    let variableCollections: FigmaLocalVariableCollection[] = [];
+
+    for (const fileId of fileKeys) {
+      const resp = await axios.get(`${BASE_URL}/files/${fileId}/variables/local`, {
+        headers: {
+          "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
+        },
+      });
+      const data = resp.data as any;
+
+      // :TODO: testing results
+      console.log("getFileLocalVariables\n",
+        data.meta.variableCollections["VariableCollectionId:8559:1850"],
+        data.meta.variables["VariableID:8559:1857"],
+      );
+    }
+  }
+
+  static async getFilePublishedVariables(fileKeys: string[]): Promise<void> {
+    let variables: FigmaPublishedVariable[] = [];
+    let variableCollections: FigmaPublishedVariableCollection[] = [];
+
+    for (const fileId of fileKeys) {
+      const resp = await axios.get(`${BASE_URL}/files/${fileId}/variables/published`, {
+        headers: {
+          "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
+        },
+      });
+      const data = resp.data as any;
+
+      // :TODO: testing results
+      console.log("getFilePublishedVariables\n",
+        data.meta.variableCollections["VariableCollectionId:8559:1850"],
+        data.meta.variables["VariableID:8559:1857"],
+      );
+    }
   }
 
   static async getNodeDetails(fileKey: string, nodeIds: string[]) {
