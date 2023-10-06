@@ -159,3 +159,25 @@ export interface FigmaPublishedVariableCollection extends FigmaVariableCollectio
   subscribed_id: string
   readonly updatedAt: string;
 }
+// Figma REST API Variable Response Base (different for some reason)
+export interface FigmaRestApiVariableResponseBase {
+  status: number;
+  error: boolean;
+  message: string; // Error message
+}
+
+// API Response: /v1/files/:file_key/variables/local
+export interface FigmaVariablesLocalResponse extends FigmaRestApiVariableResponseBase {
+  meta: {
+    variables: Record<string, FigmaLocalVariable>;
+    variableCollections: Record<string, FigmaLocalVariableCollection>;
+  }
+}
+
+// API Response: /v1/files/:file_key/variables/published
+export interface FigmaVariablesPublishedResponse extends FigmaRestApiVariableResponseBase {
+  meta: {
+    variables: Record<string, FigmaPublishedVariable>;
+    variableCollections: Record<string, FigmaPublishedVariableCollection>;
+  }
+}

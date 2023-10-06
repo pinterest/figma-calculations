@@ -1,5 +1,9 @@
 import {
   FigmaFile,
+  FigmaLocalVariable,
+  FigmaLocalVariableCollection,
+  FigmaPublishedVariable,
+  FigmaPublishedVariableCollection,
   FigmaTeamComponent,
   FigmaTeamStyle,
   StyleBucket,
@@ -158,13 +162,25 @@ export class FigmaCalculator extends FigmaDocumentParser {
   }
 
   /**
-   * Load the local/published [:TODO:] variables from the given files
-   *@param fileIds - the file ids to load variables from
+   * Load the local variables from the given file
+   * @param fileKey - the file id to load variables from
    */
-  async loadVariables(fileIds: string[]): Promise<void> {
-    // :TODO: return some or all of this
-    await FigmaAPIHelper.getFileLocalVariables(fileIds);
-    await FigmaAPIHelper.getFilePublishedVariables(fileIds);
+  async loadLocalVariables(fileKey: string): Promise<{
+    variables: Record<string, FigmaLocalVariable>;
+    variableCollections: Record<string, FigmaLocalVariableCollection>;
+  }> {
+    return await FigmaAPIHelper.getFileLocalVariables(fileKey);
+  }
+
+  /**
+   * Load the published variables from the given file
+   * @param fileKey - the file id to load variables from
+   */
+  async loadPublishedVariables(fileKey: string): Promise<{
+    variables: Record<string, FigmaPublishedVariable>;
+    variableCollections: Record<string, FigmaPublishedVariableCollection>;
+  }> {
+    return await FigmaAPIHelper.getFilePublishedVariables(fileKey);
   }
 
   static generateStyleBucket = generateStyleBucket;

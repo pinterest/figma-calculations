@@ -14,6 +14,8 @@ import {
   FigmaLocalVariableCollection,
   FigmaPublishedVariable,
   FigmaPublishedVariableCollection,
+  FigmaVariablesLocalResponse,
+  FigmaVariablesPublishedResponse,
 } from "./models/figma";
 
 /**
@@ -256,43 +258,35 @@ export class FigmaAPIHelper {
     return extendedStyles;
   }
 
-  static async getFileLocalVariables(fileKeys: string[]): Promise<void> {
-    let variables: FigmaLocalVariable[] = [];
-    let variableCollections: FigmaLocalVariableCollection[] = [];
+  static async getFileLocalVariables(fileKey: string): Promise<{
+    variables: Record<string, FigmaLocalVariable>;
+    variableCollections: Record<string, FigmaLocalVariableCollection>;
+  }> {
+    const resp = await axios.get<FigmaVariablesLocalResponse>(`${BASE_URL}/files/${fileKey}/variables/local`, {
+      headers: {
+        "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
+      },
+    });
 
-    for (const fileId of fileKeys) {
-      const resp = await axios.get(`${BASE_URL}/files/${fileId}/variables/local`, {
-        headers: {
-          "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-        },
-      });
-      const data = resp.data as any;
-
-      // :TODO: testing results
-      console.log("getFileLocalVariables\n",
-        data.meta.variableCollections["VariableCollectionId:8559:1850"],
-        data.meta.variables["VariableID:8559:1857"],
-      );
+    return {
+      variables: resp.data.meta?.variables,
+      variableCollections: resp.data.meta?.variableCollections,
     }
   }
 
-  static async getFilePublishedVariables(fileKeys: string[]): Promise<void> {
-    let variables: FigmaPublishedVariable[] = [];
-    let variableCollections: FigmaPublishedVariableCollection[] = [];
+  static async getFilePublishedVariables(fileKey: string): Promise<{
+    variables: Record<string, FigmaPublishedVariable>;
+    variableCollections: Record<string, FigmaPublishedVariableCollection>;
+  }> {
+    const resp = await axios.get<FigmaVariablesPublishedResponse>(`${BASE_URL}/files/${fileKey}/variables/published`, {
+      headers: {
+        "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
+      },
+    });
 
-    for (const fileId of fileKeys) {
-      const resp = await axios.get(`${BASE_URL}/files/${fileId}/variables/published`, {
-        headers: {
-          "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-        },
-      });
-      const data = resp.data as any;
-
-      // :TODO: testing results
-      console.log("getFilePublishedVariables\n",
-        data.meta.variableCollections["VariableCollectionId:8559:1850"],
-        data.meta.variables["VariableID:8559:1857"],
-      );
+    return {
+      variables: resp.data.meta?.variables,
+      variableCollections: resp.data.meta?.variableCollections,
     }
   }
 
