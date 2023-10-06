@@ -59,22 +59,14 @@ export interface FigmaTeamStyle extends FigmaSharedNode {
   nodeDetails: any;
 }
 
-export interface FigmaProjectDetails {
-  name: string;
-  projects: FigmaProject[];
-}
-
 export interface FigmaProject {
   name: string;
   id: string;
 }
-export interface FigmaPartialFile {
-  projectName?: string;
-  teamName?: string;
-  key: string;
+
+export interface FigmaProjectDetails {
   name: string;
-  thumbnail_url: string;
-  last_modified: string;
+  projects: FigmaProject[];
 }
 
 export interface FigmaFile {
@@ -90,6 +82,15 @@ export interface FigmaFile {
   schemaVersion: 0;
   styles: { [style_node_id: string]: FigmaTeamStyle };
   mainFileKey: string;
+}
+
+export interface FigmaPartialFile {
+  projectName?: string;
+  teamName?: string;
+  key: string;
+  name: string;
+  thumbnail_url: string;
+  last_modified: string;
 }
 
 export interface FigmaImages {
@@ -159,6 +160,22 @@ export interface FigmaPublishedVariableCollection extends FigmaVariableCollectio
   subscribed_id: string
   readonly updatedAt: string;
 }
+
+// Figma REST API Response Base
+export interface FigmaRestApiResponseBase {
+  status: number;
+  err: string; // Error message
+}
+
+// API Response: /v1/files/:file_key/styles
+export interface FigmaFileStylesResponse extends FigmaRestApiResponseBase {
+  meta: {
+    styles: FigmaTeamStyle[];
+  }
+}
+
+export interface FigmaTeamProjectsResponse extends FigmaRestApiResponseBase, FigmaProjectDetails {}
+
 // Figma REST API Variable Response Base (different for some reason)
 export interface FigmaRestApiVariableResponseBase {
   status: number;
