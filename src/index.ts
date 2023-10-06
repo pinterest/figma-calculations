@@ -149,7 +149,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
   /**
    * Load all of the valid styles from your library
-   *@param teamId - the team id to load styles from
+   * @param teamId - the team id to load styles from
    */
   async loadStyles(teamId: string): Promise<FigmaTeamStyle[]> {
     if (!this.apiToken) throw new Error("No Figma API token provided");
@@ -408,7 +408,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
     const adoptionPercent = makePercent(
       (allTotals.totalNodesInLibrary + allTotals.totalMatchingText) /
-        allTotals.totalNodesOnPage
+      allTotals.totalNodesOnPage
     );
 
     return adoptionPercent;
