@@ -1,6 +1,7 @@
 .editorconfig
 .github
-.jest.config.ts
+jest.config.ts
+tsconfig.json
 tests/*
 src/*
 dist/examples/*
