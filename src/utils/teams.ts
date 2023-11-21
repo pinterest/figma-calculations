@@ -34,7 +34,7 @@ export async function getFigmaPagesForTeam(
     }
   }
 
-  // a fallback prop, the fimga API is inaccurate to get the last modified time
+  // a fallback prop, the figma API is inaccurate to get the last modified time
   if (useVersionHistory) {
     let numFiles = 1;
 

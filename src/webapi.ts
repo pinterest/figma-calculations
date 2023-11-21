@@ -6,11 +6,18 @@ import {
   FigmaFile,
   FigmaImages,
   FigmaPartialFile,
-  FigmaSharedNode,
   FigmaTeamComponent,
   FigmaTeamStyle,
   FigmaProjectDetails,
   FigmaVersion,
+  FigmaLocalVariable,
+  FigmaLocalVariableCollection,
+  FigmaPublishedVariable,
+  FigmaPublishedVariableCollection,
+  FigmaVariablesLocalResponse,
+  FigmaVariablesPublishedResponse,
+  FigmaFileStylesResponse,
+  FigmaTeamProjectsResponse,
 } from "./models/figma";
 
 /**
@@ -28,14 +35,14 @@ export class FigmaAPIHelper {
   ): Promise<FigmaProjectDetails[]> {
     let projects: FigmaProjectDetails[] = [];
     for (const teamId of teamIds) {
-      const resp = await axios.get(`${BASE_URL}/teams/${teamId}/projects`, {
+      const resp = await axios.get<FigmaTeamProjectsResponse>(`${BASE_URL}/teams/${teamId}/projects`, {
         headers: {
           "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
         },
       });
-      const data = resp.data as any;
-      if (!data.error && data.projects) {
-        projects = projects.concat(data as FigmaProjectDetails[]);
+      const data = resp.data;
+      if (!data.err && data.projects) {
+        projects = projects.concat(data);
       }
     }
     return projects;
@@ -224,14 +231,14 @@ export class FigmaAPIHelper {
   static async getFileStyles(fileKeys: string[]): Promise<FigmaTeamStyle[]> {
     let styles: FigmaTeamStyle[] = [];
     for (const fileId of fileKeys) {
-      const resp = await axios.get(`${BASE_URL}/files/${fileId}/styles`, {
+      const resp = await axios.get<FigmaFileStylesResponse>(`${BASE_URL}/files/${fileId}/styles`, {
         headers: {
           "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
         },
       });
-      const data = resp.data as any;
-      if (!data.error && data.meta.styles) {
-        styles = styles.concat(data.meta.styles as FigmaTeamStyle[]);
+      const data = resp.data;
+      if (!data.err && data.meta.styles) {
+        styles = styles.concat(data.meta.styles);
       }
     }
 
@@ -244,13 +251,45 @@ export class FigmaAPIHelper {
       const data = await this.getNodeDetails(fileKey, fileBuckets[fileKey]);
       for (const id of fileBuckets[fileKey]) {
         // text styles
-        const node = nodeIdMap[id] as FigmaTeamStyle;
+        const node = nodeIdMap[id];
         node.nodeDetails = data.nodes[id].document;
         extendedStyles.push(node);
       }
     }
 
     return extendedStyles;
+  }
+
+  static async getFileLocalVariables(fileKey: string): Promise<{
+    variables: Record<string, FigmaLocalVariable>;
+    variableCollections: Record<string, FigmaLocalVariableCollection>;
+  }> {
+    const resp = await axios.get<FigmaVariablesLocalResponse>(`${BASE_URL}/files/${fileKey}/variables/local`, {
+      headers: {
+        "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
+      },
+    });
+
+    return {
+      variables: resp.data.meta?.variables,
+      variableCollections: resp.data.meta?.variableCollections,
+    }
+  }
+
+  static async getFilePublishedVariables(fileKey: string): Promise<{
+    variables: Record<string, FigmaPublishedVariable>;
+    variableCollections: Record<string, FigmaPublishedVariableCollection>;
+  }> {
+    const resp = await axios.get<FigmaVariablesPublishedResponse>(`${BASE_URL}/files/${fileKey}/variables/published`, {
+      headers: {
+        "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
+      },
+    });
+
+    return {
+      variables: resp.data.meta?.variables,
+      variableCollections: resp.data.meta?.variableCollections,
+    }
   }
 
   static async getNodeDetails(fileKey: string, nodeIds: string[]) {

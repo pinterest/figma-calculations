@@ -1,3 +1,6 @@
+// Types for the Figma REST API, since they don't yet publish a schema for it:
+// https://forum.figma.com/t/where-can-i-find-the-rest-api-schema/1194
+
 export interface FigmaSharedNode {
   key: string;
   file_key: string;
@@ -56,22 +59,14 @@ export interface FigmaTeamStyle extends FigmaSharedNode {
   nodeDetails: any;
 }
 
-export interface FigmaProjectDetails {
-  name: string;
-  projects: FigmaProject[];
-}
-
 export interface FigmaProject {
   name: string;
   id: string;
 }
-export interface FigmaPartialFile {
-  projectName?: string;
-  teamName?: string;
-  key: string;
+
+export interface FigmaProjectDetails {
   name: string;
-  thumbnail_url: string;
-  last_modified: string;
+  projects: FigmaProject[];
 }
 
 export interface FigmaFile {
@@ -87,6 +82,15 @@ export interface FigmaFile {
   schemaVersion: 0;
   styles: { [style_node_id: string]: FigmaTeamStyle };
   mainFileKey: string;
+}
+
+export interface FigmaPartialFile {
+  projectName?: string;
+  teamName?: string;
+  key: string;
+  name: string;
+  thumbnail_url: string;
+  last_modified: string;
 }
 
 export interface FigmaImages {
@@ -105,4 +109,92 @@ export interface FigmaVersion {
     handle: string;
     img_url: string;
   };
+}
+
+// Variables
+interface FigmaVariableBase {
+  readonly id: string
+  readonly key: string
+  name: string
+  readonly variableCollectionId: string
+  readonly resolvedType: VariableResolvedDataType
+}
+
+export interface FigmaLocalVariable extends FigmaVariableBase {
+  description: string
+  hiddenFromPublishing: boolean
+  readonly remote: boolean
+  readonly valuesByMode: {
+    [modeId: string]: VariableValue
+  }
+  scopes: Array<VariableScope>
+  readonly codeSyntax: {
+    [platform in CodeSyntaxPlatform]?: string
+  }
+}
+
+export interface FigmaPublishedVariable extends FigmaVariableBase {
+  subscribed_id: string
+  readonly updatedAt: string;
+}
+
+// Variable Collections
+interface FigmaVariableCollectionBase {
+  readonly id: string
+  readonly key: string
+  name: string
+}
+
+export interface FigmaLocalVariableCollection extends FigmaVariableCollectionBase {
+  hiddenFromPublishing: boolean
+  readonly remote: boolean
+  readonly modes: Array<{
+    modeId: string
+    name: string
+  }>
+  readonly defaultModeId: string
+  readonly variableIds: string[]
+}
+
+export interface FigmaPublishedVariableCollection extends FigmaVariableCollectionBase {
+  subscribed_id: string
+  readonly updatedAt: string;
+}
+
+// Figma REST API Response Base
+export interface FigmaRestApiResponseBase {
+  status: number;
+  err: string; // Error message
+}
+
+// API Response: /v1/files/:file_key/styles
+export interface FigmaFileStylesResponse extends FigmaRestApiResponseBase {
+  meta: {
+    styles: FigmaTeamStyle[];
+  }
+}
+
+export interface FigmaTeamProjectsResponse extends FigmaRestApiResponseBase, FigmaProjectDetails {}
+
+// Figma REST API Variable Response Base (different for some reason)
+export interface FigmaRestApiVariableResponseBase {
+  status: number;
+  error: boolean;
+  message: string; // Error message
+}
+
+// API Response: /v1/files/:file_key/variables/local
+export interface FigmaVariablesLocalResponse extends FigmaRestApiVariableResponseBase {
+  meta: {
+    variables: Record<string, FigmaLocalVariable>;
+    variableCollections: Record<string, FigmaLocalVariableCollection>;
+  }
+}
+
+// API Response: /v1/files/:file_key/variables/published
+export interface FigmaVariablesPublishedResponse extends FigmaRestApiVariableResponseBase {
+  meta: {
+    variables: Record<string, FigmaPublishedVariable>;
+    variableCollections: Record<string, FigmaPublishedVariableCollection>;
+  }
 }
