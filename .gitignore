@@ -1,6 +1,9 @@
 node_modules/
 dist/*
 
+# fs stuff
+.DS_Store
+
 tests/token.ts
 tests/token.js
 src/examples/token.ts
