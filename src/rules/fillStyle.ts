@@ -20,10 +20,11 @@ export default function checkFillStyleMatch(
 ): LintCheck {
   // decrement the count, or increment depending on what we find
   const checkName = "Fill-Style";
+
   // check if correct Node Type
   if (
     !isNodeOfTypeAndVisible(
-      ["TEXT", "RECTANGLE", "ELLIPSE", "POLYGON", "INSTANCE"],
+      ["ELLIPSE", "INSTANCE", "POLYGON", "RECTANGLE", "STAR", "TEXT", "VECTOR"],
       targetNode
     )
   )
