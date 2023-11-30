@@ -8,19 +8,9 @@ import {
   getStyleLookupDefinitions,
   getStyleLookupKey,
 } from "../src/rules";
+import { HexStyleMap } from "./__mocks__/hexStyles.mock";
 
 jest.setTimeout(300000);
-
-const HexStyleMap = {
-  "#FFFFFF": {
-    text: "24671a3f7ba8e6a760861f9501b53fa3e1b18c40", // Text & Icons/Dark-mode/Default - Mochimalist-white-0'
-    fill: "9ce3e95c3065d6bd3b2086553d4e94e5e29cf82e", // Baseline/Light-mode/UI Background - Mochimalist-white-0
-  },
-  "#000000": {
-    text: "869796997aa6adc4336df44e903c5ce8787cbbf3", // Text & Icons/Light-mode/Default - Cosmicore-gray-900
-    fill: "774cae09471c39640f80ed5b59f2804859709ad9", // Baseline/Dark-mode/UI Background - Cosmicore-gray-900
-  },
-};
 
 const TEST_FILE = "XZe09gY6eNSg4rZHkN8RP2"; // "xSpy5UYEhvte0j3i7E2Hnd" ;
 const TEAM_ID = "626524232805730321";
@@ -46,7 +36,7 @@ describe("Do Test File Cases Pass?", () => {
   beforeAll(async () => {
     figmaCalculator = new FigmaCalculator();
     figmaCalculator.setAPIToken(FIGMA_TOKEN);
-    
+
     // Seed FigmaCalculator with a test file
     const file = await figmaCalculator.fetchCloudDocument(TEST_FILE);
 
