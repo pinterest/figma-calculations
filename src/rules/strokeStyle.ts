@@ -18,7 +18,14 @@ export default function checkStrokeStyleMatch(
 ): LintCheck {
   // decrement the count, or increment depending on what we find
   const checkName = "Stroke-Fill-Style";
-  if (!isNodeOfTypeAndVisible(["RECTANGLE", "ELLISPE"], targetNode))
+
+  // check if correct Node Type
+  if (
+    !isNodeOfTypeAndVisible(
+      ["ELLIPSE", "INSTANCE", "POLYGON", "RECTANGLE", "STAR", "TEXT", "VECTOR"],
+      targetNode
+    )
+  )
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
   // if a stroke doesn't exist in the first place, it's a skip
