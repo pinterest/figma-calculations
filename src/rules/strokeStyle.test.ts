@@ -162,7 +162,7 @@ describe('strokeStyle rules', () => {
 
     const results = checkStrokeStyleMatch(
       styleBucket,
-      testNode as RectangleNode,
+      testNode,
       {
         hexStyleMap: HexStyleMap,
         styleLookupMap
@@ -176,7 +176,7 @@ describe('strokeStyle rules', () => {
 
     const results = checkStrokeStyleMatch(
       styleBucket,
-      testNode as RectangleNode,
+      testNode,
       {
         hexStyleMap: HexStyleMap,
         styleLookupMap
@@ -191,7 +191,7 @@ describe('strokeStyle rules', () => {
 
     const results = checkStrokeStyleMatch(
       styleBucket,
-      testNode as RectangleNode,
+      testNode,
       {
         hexStyleMap: HexStyleMap,
         styleLookupMap
@@ -205,7 +205,7 @@ describe('strokeStyle rules', () => {
 
     const results = checkStrokeStyleMatch(
       styleBucket,
-      testNode as RectangleNode,
+      testNode,
       {
         hexStyleMap: HexStyleMap,
         styleLookupMap
