@@ -159,7 +159,7 @@ describe('fillStyle rules', () => {
 
     const results = checkFillStyleMatch(
       styleBucket,
-      testNode as RectangleNode,
+      testNode,
       {
         hexStyleMap: HexStyleMap,
         styleLookupMap
@@ -173,7 +173,7 @@ describe('fillStyle rules', () => {
 
     const results = checkFillStyleMatch(
       styleBucket,
-      testNode as RectangleNode,
+      testNode,
       {
         hexStyleMap: HexStyleMap,
         styleLookupMap
@@ -188,7 +188,7 @@ describe('fillStyle rules', () => {
 
     const results = checkFillStyleMatch(
       styleBucket,
-      testNode as RectangleNode,
+      testNode,
       {
         hexStyleMap: HexStyleMap,
         styleLookupMap
@@ -202,7 +202,7 @@ describe('fillStyle rules', () => {
 
     const results = checkFillStyleMatch(
       styleBucket,
-      testNode as RectangleNode,
+      testNode,
       {
         hexStyleMap: HexStyleMap,
         styleLookupMap
