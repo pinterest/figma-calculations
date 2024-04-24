@@ -83,14 +83,14 @@ const doWork = async () => {
 
 Read our [blog post](https://www.figma.com/blog/how-pinterests-design-systems-team-measures-adoption/) on how we calculate design adoption.
 
-### Contributing
-
-> Contributions may or may not be accepted. Send us an [e-mail](mailto:rlingineni@pinterest.com, djohnson@pintrest.com?subject=Question%20on%20Figma%20Library) to us.
+### Developing
 
 After cloning the repo, you can run
 ```
 npm run watch
 ```
 
-To link locally to your library, you can use the [npm link command](https://docs.npmjs.com/cli/v8/commands/npm-link) instructions
+To link locally to your library, you can use the [npm link command](https://docs.npmjs.com/cli/v8/commands/npm-link) instructions. The library will work in both a plug-in and cloud environment.
+
+Contributions are welcome. However, they may or may not be accepted. Send us an [e-mail](mailto:rlingineni@pinterest.com,djohnson@pintrest.com?subject=Question%20on%20Figma%20Library) if you plan to add back to the library.
 
