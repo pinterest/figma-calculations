@@ -19,7 +19,7 @@ If you don't want to write your own code, try it out in this [playground](https:
 ### Usage
 
 ```js
-import { FigmaCalculator } from "figma-calculator";
+import { FigmaCalculator } from "figma-calculations";
 
 const figmaCalculator = new FigmaCalculator();
 
