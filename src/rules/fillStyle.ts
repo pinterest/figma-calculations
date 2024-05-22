@@ -55,6 +55,13 @@ export default function checkFillStyleMatch(
     return { checkName, matchLevel: "Skip", suggestions: [] };
   }
 
+  // :TODO: Temp workaround until we properly support variable linting, fixing, and compliance calculations
+  // Ignore the node if any color variables are in-use
+  const colorVariables = jp.query(targetNode, "$.fills[*].boundVariables.color");
+  if (colorVariables.length > 0) {
+    return { checkName, matchLevel: "Skip", suggestions: [] };
+  }
+
   if (opts?.hexStyleMap) {
     const { hexStyleMap } = opts;
     const fillProps = getStyleLookupDefinitions("FILL");
