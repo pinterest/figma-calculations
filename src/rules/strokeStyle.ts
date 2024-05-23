@@ -44,6 +44,13 @@ export default function checkStrokeStyleMatch(
       exactMatch: { key: exactMatch.key },
     };
 
+  // :TODO: Temp workaround until we properly support variable linting, fixing, and compliance calculations
+  // Ignore the node if any color variables are in-use
+  const colorVariables = jp.query(targetNode, "$.strokes[*].boundVariables.color");
+  if (colorVariables.length > 0) {
+    return { checkName, matchLevel: "Skip", suggestions: [] };
+  }
+
   if (opts?.hexStyleMap) {
     const { hexStyleMap } = opts;
     const strokeProps = getStyleLookupDefinitions("STROKE");
