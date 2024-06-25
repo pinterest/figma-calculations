@@ -9,7 +9,6 @@ import {
   LintCheckOptions,
 } from ".";
 import { isExactStyleMatch } from "./utils/exact";
-import getPartialStyleMatches from "./utils/partial";
 import { figmaRGBToHex } from "../utils/rgbToHex";
 import getStyleLookupMatches from "./utils/lookup";
 

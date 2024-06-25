@@ -8,8 +8,8 @@ let styleBucket: StyleBucket;
 let styleLookupMap: StyleLookupMap;
 
 beforeAll(() => {
-  // The fillStyle and strokStyle tests expects getStyleLookupKey() to detect it is
-  // in the Figma PluginAPI conetext by checking that the typeof figma is not undefined.
+  // The fillStyle and strokeStyle tests expects getStyleLookupKey() to detect it is
+  // in the Figma PluginAPI context by checking that the typeof figma is not undefined.
   // So we'll mock that in global space so it sees something.
   //
   // @ts-ignore: Mocking a global

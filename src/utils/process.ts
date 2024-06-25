@@ -88,7 +88,7 @@ export function getProcessedNodes(
     }
   }
 
-  // run lint checks on the remaning nodes
+  // run lint checks on the remaining nodes
   for (const node of nonLibraryNodes) {
     const result = runSimilarityChecks(styleBuckets, node, {
       styleLookupMap,

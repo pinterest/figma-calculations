@@ -10,7 +10,11 @@ import { LintCheckName, LintCheck, LintSuggestion } from "../../models/stats";
 
 
 /**
- * Check if any sub properties overlap and amtch
+ * Check if any sub properties overlap and match
+ *
+ * WARNING: DEPRECATED
+ * @deprecated Replaced with getStyleLookupMatches()
+ *
  * @param checkName
  * @param styles
  * @param propertiesToCheck
@@ -30,7 +34,7 @@ export default function getPartialStyleMatches(
 
   //return { checkName, matchLevel: "None", suggestions: [] };
 
-  
+
   const checkPropertyValue = (
     property: PropertyCheck,
     styleValue: any,
@@ -82,7 +86,7 @@ export default function getPartialStyleMatches(
     return undefined;
   };
 
-  
+
   // check against all of styles, and that field in a style
   for (const styleId of Object.keys(styles)) {
     const styleNode = styles[styleId];
@@ -134,5 +138,5 @@ export default function getPartialStyleMatches(
   }
 
   return { checkName, matchLevel: "Partial", suggestions };
-  
+
 }

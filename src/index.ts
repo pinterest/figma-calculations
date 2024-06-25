@@ -48,6 +48,8 @@ export * from "./rules/cleaners";
 export class FigmaCalculator extends FigmaDocumentParser {
   components: FigmaTeamComponent[] = [];
   allStyles: FigmaTeamStyle[] = [];
+  // :TODO: Also stash loaded local and published variables when loaded
+
   apiToken: string = "";
 
   constructor() {
@@ -283,7 +285,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
     // get the component's real name
     // check if a component has a mainComponent?
     const isLibraryComponent = (instanceNode: any) => {
-      // if it's a web file, then check the componentId else the mainCompponent property to get the key
+      // if it's a web file, then check the componentId else the mainComponent property to get the key
       const componentKey =
         instanceNode.componentId || instanceNode.mainComponent.key;
 
