@@ -17,7 +17,6 @@ export default function checkFillStyleMatch(
   targetNode: BaseNode,
   opts?: LintCheckOptions
 ): LintCheck {
-  // decrement the count, or increment depending on what we find
   const checkName = "Fill-Style";
 
   // check if correct Node Type

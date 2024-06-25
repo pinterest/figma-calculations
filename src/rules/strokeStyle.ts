@@ -16,7 +16,6 @@ export default function checkStrokeStyleMatch(
   targetNode: BaseNode,
   opts?: LintCheckOptions
 ): LintCheck {
-  // decrement the count, or increment depending on what we find
   const checkName = "Stroke-Fill-Style";
 
   // check if correct Node Type
