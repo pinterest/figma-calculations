@@ -6,8 +6,8 @@ import {
   isNodeOfTypeAndVisible,
   LintCheckOptions
 } from ".";
-import { isExactStyleMatch } from "./utils/exact";
-import getStyleLookupMatches from "./utils/lookup";
+import { isExactStyleMatch } from "./utils/styles/exact";
+import getStyleLookupMatches from "./utils/styles/lookup";
 import { figmaRGBToHex } from "../utils/rgbToHex";
 import jp from "jsonpath";
 

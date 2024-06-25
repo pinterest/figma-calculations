@@ -8,9 +8,9 @@ import {
   isNodeOfTypeAndVisible,
   LintCheckOptions,
 } from ".";
-import { isExactStyleMatch } from "./utils/exact";
+import { isExactStyleMatch } from "./utils/styles/exact";
+import getStyleLookupMatches from "./utils/styles/lookup";
 import { figmaRGBToHex } from "../utils/rgbToHex";
-import getStyleLookupMatches from "./utils/lookup";
 
 export default function checkFillStyleMatch(
   styleBucket: StyleBucket,

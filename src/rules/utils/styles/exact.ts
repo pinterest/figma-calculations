@@ -1,4 +1,4 @@
-import { FigmaStyleType, StyleBucket } from "../../models/figma";
+import { FigmaStyleType, StyleBucket } from "../../../models/figma";
 
 export const isExactStyleMatch = (
   styleType: FigmaStyleType | "STROKE",

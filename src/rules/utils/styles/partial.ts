@@ -4,8 +4,8 @@ import {
   FigmaStyleType,
   PropertyCheck,
   FigmaTeamStyle,
-} from "../../models/figma";
-import { LintCheckName, LintCheck, LintSuggestion } from "../../models/stats";
+} from "../../../models/figma";
+import { LintCheckName, LintCheck, LintSuggestion } from "../../../models/stats";
 
 
 

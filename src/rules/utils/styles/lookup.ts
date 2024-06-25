@@ -1,8 +1,8 @@
 import jp from "jsonpath";
 
-import { getStyleLookupDefinitions, getStyleLookupKey } from "..";
-import { FigmaStyleType, StyleLookupMap } from "../../models/figma";
-import { LintCheckName, LintCheck, LintSuggestion } from "../../models/stats";
+import { getStyleLookupDefinitions, getStyleLookupKey } from "../..";
+import { FigmaStyleType, StyleLookupMap } from "../../../models/figma";
+import { LintCheckName, LintCheck, LintSuggestion } from "../../../models/stats";
 
 /**
  * Check if any sub properties overlap and match
