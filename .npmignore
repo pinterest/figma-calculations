@@ -2,6 +2,9 @@
 .github
 jest.config.ts
 tsconfig.json
+tsconfig.build.json
 tests/*
 src/*
 dist/examples/*
+comps.json
+styles.json

@@ -5,12 +5,12 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w",
+    "build": "tsc --project tsconfig.build.json",
+    "watch": "tsc --project tsconfig.build.json -w",
     "test": "jest src",
     "test-stats": "jest tests/stats.test.ts",
     "perf": "jest perf.test.ts",
-    "example": "tsc && node ./dist/examples/allfiles.js"
+    "example": "tsc --project tsconfig.build.json && node ./dist/examples/allfiles.js"
   },
   "author": "",
   "license": "ISC",

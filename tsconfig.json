@@ -24,11 +24,16 @@
     // "useDefineForClassFields": true,                  /* Emit ECMAScript-standard-compliant class fields. */
 
     /* Modules */
-    "module": "commonjs" /* Specify what module code is generated. */,
-    "rootDir": "./src" /* Specify the root folder within your source files. */,
+    "module": "commonjs"                                 /* Specify what module code is generated. */,
+    // "rootDir": "./src"                                /* Specify the root folder within your source files. */,
     // "moduleResolution": "node",                       /* Specify how TypeScript looks up a file from a given module specifier. */
-    // "baseUrl": "./",                                  /* Specify the base directory to resolve non-relative module names. */
-    // "paths": {},                                      /* Specify a set of entries that re-map imports to additional lookup locations. */
+    "baseUrl": "./",                                     /* Specify the base directory to resolve non-relative module names. */
+    "paths": {                                           /* Specify a set of entries that re-map imports to additional lookup locations. */
+      "@models/*": ["src/models/*"],
+      "@rules/*": ["src/rules/*"],
+      "@tests/*": ["tests/*"],
+      "@utils/*": ["src/utils/*"],
+    },
     // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
     "typeRoots": ["./node_modules/@types", "./node_modules/@figma"],
     // "types": [],                                      /* Specify type package names to be included without being referenced in a source file. */
@@ -99,6 +104,5 @@
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
 
-  "include": ["src"],
-  "exclude": ["tests", "**/*.test.ts", "**/*.test.tsx", "**/*.mock.ts"]
+  "include": ["src"]
 }
