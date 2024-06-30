@@ -48,6 +48,10 @@ export interface FigmaTeamComponent extends FigmaSharedNode {
     backgroundColorString?: string;
     pageId?: string;
     pageName?: string;
+    containingStateGroup?: {
+      name: string;
+      nodeId: string;
+    };
   };
 }
 
