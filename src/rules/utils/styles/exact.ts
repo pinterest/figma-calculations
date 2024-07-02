@@ -69,8 +69,9 @@ function isExactStyleMatchFromCloud(
 
   // may be error prone because fill style could correspond to fill rather than stroke
   if (styleType === "STROKE") {
+    styleKey = (targetNode as any).styles["stroke"];
+
     // some hacky stuff because Figma doesn't differentiate stroke as a Fill Style
-    styleKey = (targetNode as any).styles["fill"];
     styleType = "FILL";
   }
 
