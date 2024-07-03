@@ -153,6 +153,9 @@ export interface FigmaPublishedVariable extends FigmaVariableBase {
   readonly updatedAt: string;
 }
 
+export type FigmaLocalVariables = Record<string, FigmaLocalVariable>;
+export type FigmaPublishedVariables = Record<string, FigmaPublishedVariable>;
+
 // Variable Collections
 interface FigmaVariableCollectionBase {
   readonly id: string
@@ -175,6 +178,9 @@ export interface FigmaPublishedVariableCollection extends FigmaVariableCollectio
   subscribed_id: string
   readonly updatedAt: string;
 }
+
+export type FigmaLocalVariableCollections = Record<string, FigmaLocalVariableCollection>;
+export type FigmaPublishedVariableCollections = Record<string, FigmaPublishedVariableCollection>;
 
 // Figma REST API Response Base
 export interface FigmaRestApiResponseBase {
@@ -201,15 +207,15 @@ export interface FigmaRestApiVariableResponseBase {
 // API Response: /v1/files/:file_key/variables/local
 export interface FigmaVariablesLocalResponse extends FigmaRestApiVariableResponseBase {
   meta: {
-    variables: Record<string, FigmaLocalVariable>;
-    variableCollections: Record<string, FigmaLocalVariableCollection>;
+    variables: FigmaLocalVariables;
+    variableCollections: FigmaLocalVariableCollections;
   }
 }
 
 // API Response: /v1/files/:file_key/variables/published
 export interface FigmaVariablesPublishedResponse extends FigmaRestApiVariableResponseBase {
   meta: {
-    variables: Record<string, FigmaPublishedVariable>;
-    variableCollections: Record<string, FigmaPublishedVariableCollection>;
+    variables: FigmaPublishedVariables;
+    variableCollections: FigmaPublishedVariableCollections;
   }
 }
