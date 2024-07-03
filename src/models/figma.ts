@@ -48,6 +48,11 @@ export interface FigmaTeamComponent extends FigmaSharedNode {
     backgroundColorString?: string;
     pageId?: string;
     pageName?: string;
+    // :NOTE: containingStateGroup is unsupported
+    //
+    // "...containingStateGroup is intentionally omitted from the documentation as this property was
+    // accidentally exposed quite a while back and is not officially supported."
+    // https://github.com/figma/rest-api-spec/issues/7#issuecomment-2066390910
     containingStateGroup?: {
       name: string;
       nodeId: string;
