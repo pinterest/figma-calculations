@@ -80,17 +80,23 @@ export interface FigmaProjectDetails {
 
 export interface FigmaFile {
   name: string;
-  role: string;
+  role: "owner" | "editor" | "viewer";
   lastModified: string;
-  editorType: string;
+  editorType: "figma" | "figjam";
   thumbnailUrl: string;
   version: string;
   document: DocumentNode;
   components: { [style_node_id: string]: FigmaTeamComponent };
   componentSets: { [style_node_id: string]: FigmaTeamComponent };
-  schemaVersion: 0;
+  schemaVersion: number;
   styles: { [style_node_id: string]: FigmaTeamStyle };
   mainFileKey: string;
+  branches?: {
+    key: string;
+    name: string;
+    thumbnail_url: string;
+    last_modified: string;
+  }[];
 }
 
 export interface FigmaPartialFile {
