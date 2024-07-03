@@ -2,6 +2,8 @@ import {
   FigmaFile,
   FigmaLocalVariable,
   FigmaLocalVariableCollection,
+  FigmaLocalVariableCollections,
+  FigmaLocalVariables,
   FigmaPublishedVariable,
   FigmaPublishedVariableCollection,
   FigmaTeamComponent,
@@ -48,6 +50,11 @@ export * from "./rules/cleaners";
 export class FigmaCalculator extends FigmaDocumentParser {
   components: FigmaTeamComponent[] = [];
   allStyles: FigmaTeamStyle[] = [];
+  localVariables: FigmaLocalVariables = {};
+  localVariableCollections: FigmaLocalVariableCollections = {};
+  publishedVariables: FigmaLocalVariables = {};
+  publishedVariableCollections: FigmaLocalVariableCollections = {};
+
   // :TODO: Also stash loaded local and published variables when loaded
 
   apiToken: string = "";
@@ -171,7 +178,16 @@ export class FigmaCalculator extends FigmaDocumentParser {
     variables: Record<string, FigmaLocalVariable>;
     variableCollections: Record<string, FigmaLocalVariableCollection>;
   }> {
-    return await FigmaAPIHelper.getFileLocalVariables(fileKey);
+    const localVariables = await FigmaAPIHelper.getFileLocalVariables(fileKey);
+
+    // Merge the variables and variable collections with any previously loaded ones
+    Object.assign(this.localVariables, localVariables.variables);
+    Object.assign(
+      this.localVariableCollections,
+      localVariables.variableCollections
+    );
+
+    return localVariables;
   }
 
   /**
@@ -182,7 +198,18 @@ export class FigmaCalculator extends FigmaDocumentParser {
     variables: Record<string, FigmaPublishedVariable>;
     variableCollections: Record<string, FigmaPublishedVariableCollection>;
   }> {
-    return await FigmaAPIHelper.getFilePublishedVariables(fileKey);
+    const publishedVariables = await FigmaAPIHelper.getFilePublishedVariables(
+      fileKey
+    );
+
+    // Merge the variables and variable collections with any previously loaded ones
+    Object.assign(this.publishedVariables, publishedVariables.variables);
+    Object.assign(
+      this.publishedVariableCollections,
+      publishedVariables.variableCollections
+    );
+
+    return publishedVariables;
   }
 
   static generateStyleBucket = generateStyleBucket;
