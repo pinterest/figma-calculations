@@ -1,7 +1,3 @@
-
-**Disclaimer:**
-> APIs are subject to change as we continue to make progress. The source code will eventually be open-sourced.
-
 ## Figma Calculations
 
 Figma calculations is a library that takes in a Figma file and returns a few actionable statistics to drive adoption and consistent usage of your design system.
@@ -92,5 +88,5 @@ npm run watch
 
 To link locally to your library, you can use the [npm link command](https://docs.npmjs.com/cli/v8/commands/npm-link) instructions. The library will work in both a plug-in and cloud environment.
 
-Contributions are welcome. However, they may or may not be accepted. Send us an [e-mail](mailto:rlingineni@pinterest.com,djohnson@pintrest.com?subject=Question%20on%20Figma%20Library) if you plan to add back to the library.
+Contributions are welcome. However, we may not accept all contributions. Send us an [e-mail](mailto:rlingineni@pinterest.com,djohnson@pintrest.com?subject=Question%20on%20Figma%20Library) if you plan to add back to the library.
 
