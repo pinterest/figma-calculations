@@ -1,8 +1,8 @@
 import checkFillStyleMatch from './fillStyle';
 import { generateStyleBucket, generateStyleLookup } from "../rules";
 import { FigmaTeamStyle, StyleBucket, StyleLookupMap } from '../models/figma';
-import { HexStyleMap } from "@tests/__mocks__/hexStyles.mock";
-import { FIGMA_STYLES } from "@tests/__mocks__/figmaStyles.mock";
+import { HexStyleMap } from "../../tests/__mocks__/hexStyles.mock";
+import { FIGMA_STYLES } from "../../tests/__mocks__/figmaStyles.mock";
 
 let styleBucket: StyleBucket;
 let styleLookupMap: StyleLookupMap;
