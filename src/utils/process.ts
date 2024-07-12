@@ -75,6 +75,7 @@ export function getProcessedNodes(
     // add the top-level node
     addToProcessedNodes({
       id: nodeId,
+      isRootComponentNode: true,
       ...baseInstanceComponent,
     });
 
@@ -83,6 +84,7 @@ export function getProcessedNodes(
     for (const layerNodeId of layers) {
       addToProcessedNodes({
         id: layerNodeId,
+        isRootComponentNode: false,
         ...baseInstanceComponent,
       });
     }
@@ -101,6 +103,7 @@ export function getProcessedNodes(
       type: node.type,
       lintChecks: result,
       belongsToLibraryComponent: false,
+      isRootComponentNode: false,
       similarComponents: [],
     });
   }

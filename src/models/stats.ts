@@ -65,6 +65,7 @@ export type ProcessedNode = {
   type: string;
   lintChecks: LintCheck[];
   belongsToLibraryComponent: boolean;
+  isRootComponentNode: boolean;
   similarComponents: string[];
 };
 
