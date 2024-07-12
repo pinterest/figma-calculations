@@ -13,6 +13,7 @@ import {
 import {
   AdoptionCalculationOptions,
   AggregateCounts,
+  AggregateCountsCompliance,
   LintCheck,
   LintCheckPercent,
   ProcessedNodeTree,
@@ -40,12 +41,18 @@ import {
   ProcessedNodeOptions,
 } from "./utils/process";
 import { getFigmaPagesForTeam } from "./utils/teams";
+import {
+  createHexColorToVariableMap,
+  getCollectionVariables,
+  HexColorToFigmaVariableMap,
+} from "./utils/variables";
 import { FigmaAPIHelper } from "./webapi";
 
 // exporting the types to reuse
 export * from "./models/stats";
 export * from "./models/figma";
 export * from "./rules/cleaners";
+export * from "./utils/variables";
 
 export class FigmaCalculator extends FigmaDocumentParser {
   components: FigmaTeamComponent[] = [];
@@ -228,9 +235,16 @@ export class FigmaCalculator extends FigmaDocumentParser {
     opts?: {
       styles?: FigmaTeamStyle[];
       styleBucket?: StyleBucket;
+      colorVariableCollectionIds?: string[];
+      variables?: FigmaLocalVariables;
+      variableCollections?: FigmaLocalVariableCollections;
     } & LintCheckOptions
   ): LintCheck[] {
-    let allStyles = this.allStyles || opts?.styles;
+    let allStyles = opts?.styles || this.allStyles;
+    let colorVariableCollectionIds = opts?.colorVariableCollectionIds || [];
+    let variables = opts?.variables || this.localVariables;
+    let variableCollections =
+      opts?.variableCollections || this.localVariableCollections;
 
     let styleBucket =
       opts?.styleBucket || FigmaCalculator.generateStyleBucket(allStyles);
@@ -240,7 +254,31 @@ export class FigmaCalculator extends FigmaDocumentParser {
         "No style bucket, or array of styles provided to generate lint results"
       );
 
-    return runSimilarityChecks(styleBucket, node, opts);
+    // Just grab the variables from specific color variable collection(s)
+    let colorVariableIds: string[] = [];
+    let hexColorToVariableMap: HexColorToFigmaVariableMap = {};
+    if (
+      colorVariableCollectionIds.length > 0 &&
+      variables &&
+      Object.keys(variables).length > 0 &&
+      variableCollections &&
+      Object.keys(variableCollections).length > 0
+    ) {
+      colorVariableIds = getCollectionVariables(
+        colorVariableCollectionIds,
+        variableCollections
+      );
+      hexColorToVariableMap = createHexColorToVariableMap(
+        colorVariableIds,
+        variables,
+        variableCollections
+      );
+    }
+
+    return runSimilarityChecks(styleBucket, variables, node, {
+      ...opts,
+      hexColorToVariableMap,
+    });
   }
 
   static filterHiddenNodes(nodes: BaseNode[]): {
@@ -363,30 +401,88 @@ export class FigmaCalculator extends FigmaDocumentParser {
     opts?: {
       components?: FigmaTeamComponent[];
       allStyles?: FigmaTeamStyle[];
+      colorVariableCollectionIds?: string[];
+      variables?: FigmaLocalVariables;
+      variableCollections?: FigmaLocalVariableCollections;
     } & ProcessedNodeOptions
   ): ProcessedNodeTree {
-    const { components, allStyles } = opts || {};
+    const {
+      components,
+      allStyles,
+      colorVariableCollectionIds,
+      variables,
+      variableCollections,
+    } = opts || {};
+    const processedNodeOpts: ProcessedNodeOptions = {
+      onProcessNode: opts?.onProcessNode,
+      hexStyleMap: opts?.hexStyleMap,
+      styleLookupMap: opts?.styleLookupMap,
+    };
+
     const { allHiddenNodes, libraryNodes, totalNodes, processedNodes } =
       getProcessedNodes(
         rootNode,
         components || this.components,
         allStyles || this.allStyles,
-        opts
+        colorVariableCollectionIds || [],
+        variables || this.localVariables,
+        variableCollections || this.localVariableCollections,
+        processedNodeOpts
       );
+
+    const compliance: AggregateCountsCompliance = {
+      fills: {
+        attached: 0,
+        detached: 0,
+        none: 0,
+      },
+      strokes: {
+        attached: 0,
+        detached: 0,
+        none: 0,
+      },
+      text: {
+        attached: 0,
+        detached: 0,
+        none: 0,
+      },
+    };
 
     const aggregates: AggregateCounts = {
       totalNodes,
       hiddenNodes: allHiddenNodes,
       libraryNodes,
       checks: {},
+      compliance,
     };
 
     // loop through the array and calculate the lint check totals
 
     for (const node of processedNodes) {
+      // Init/reset the Style/Variable bitwise boolean counter helpers
+      const counters = {
+        fills: {
+          full: 0,
+          partial: 0,
+          none: 0,
+        },
+        strokes: {
+          full: 0,
+          partial: 0,
+          none: 0,
+        },
+        text: {
+          full: 0,
+          partial: 0,
+          none: 0,
+        },
+      };
+
       for (const check of node.lintChecks) {
-        if (!aggregates.checks[check.checkName]) {
-          aggregates.checks[check.checkName] = {
+        const { checkName, matchLevel } = check;
+
+        if (!aggregates.checks[checkName]) {
+          aggregates.checks[checkName] = {
             full: 0,
             partial: 0,
             skip: 0,
@@ -394,28 +490,78 @@ export class FigmaCalculator extends FigmaDocumentParser {
           };
         }
 
-        switch (check.matchLevel) {
+        switch (matchLevel) {
           case "Full":
             {
-              aggregates.checks[check.checkName]!.full += 1;
+              aggregates.checks[checkName]!.full += 1;
+              if (checkName === "Fill-Style" || checkName === "Fill-Variable")
+                counters.fills.full++;
+              else if (
+                checkName === "Stroke-Fill-Style" ||
+                checkName === "Stroke-Fill-Variable"
+              )
+                counters.strokes.full++;
+              else if (checkName === "Text-Style") counters.text.full++;
             }
             break;
-          case "None":
-            {
-              aggregates.checks[check.checkName]!.none += 1;
-            }
-            break;
+
           case "Partial":
             {
-              aggregates.checks[check.checkName]!.partial += 1;
+              aggregates.checks[checkName]!.partial += 1;
+              if (checkName === "Fill-Style" || checkName === "Fill-Variable")
+                counters.fills.partial++;
+              else if (
+                checkName === "Stroke-Fill-Style" ||
+                checkName === "Stroke-Fill-Variable"
+              )
+                counters.strokes.partial++;
+              else if (checkName === "Text-Style") counters.text.partial++;
             }
             break;
+
+          case "None":
+            {
+              aggregates.checks[checkName]!.none += 1;
+              if (checkName === "Fill-Style" || checkName === "Fill-Variable")
+                counters.fills.none++;
+              else if (
+                checkName === "Stroke-Fill-Style" ||
+                checkName === "Stroke-Fill-Variable"
+              )
+                counters.strokes.none++;
+              else if (checkName === "Text-Style") counters.text.none++;
+            }
+            break;
+
           case "Skip": {
-            aggregates.checks[check.checkName]!.skip += 1;
+            aggregates.checks[checkName]!.skip += 1;
           }
         }
       }
+
+      // Attached means either using a style or a variable exact match (full)
+      // Bitwise boolean OR to increment if either is true
+      compliance.fills.attached += counters.fills.full > 0 ? 1 : 0;
+      compliance.strokes.attached += counters.strokes.full > 0 ? 1 : 0;
+
+      // Detached means either a matching style or variable was found, but not used (partial)
+      // Relies on the fact that we don't try to find a variable suggestion if an exact style match was found, and vice versa
+      // Bitwise boolean OR
+      compliance.fills.detached += counters.fills.partial > 0 ? 1 : 0;
+      compliance.strokes.detached += counters.strokes.partial > 0 ? 1 : 0;
+
+      // None (outside of system) means neither a matching style or variable was found (none)
+      // Bitwise boolean AND to increment if both are true
+      compliance.fills.none += counters.fills.none === 2 ? 1 : 0;
+      compliance.strokes.none += counters.strokes.none === 2 ? 1 : 0;
+
+      // We don't have Text variable support (yet), so pass thru
+      compliance.text.attached += counters.text.full;
+      compliance.text.detached += counters.text.partial;
+      compliance.text.none += counters.text.none;
     }
+
+    aggregates.compliance = compliance;
 
     return {
       parentNode: {
@@ -453,7 +599,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
     const adoptionPercent = makePercent(
       (allTotals.totalNodesInLibrary + allTotals.totalMatchingText) /
-      allTotals.totalNodesOnPage
+        allTotals.totalNodesOnPage
     );
 
     return adoptionPercent;

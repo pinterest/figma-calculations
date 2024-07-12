@@ -4,7 +4,7 @@ import { LintCheck, LintSuggestion } from "../models/stats";
 import {
   getStyleLookupDefinitions,
   isNodeOfTypeAndVisible,
-  LintCheckOptions
+  LintCheckOptions,
 } from ".";
 import { isExactStyleMatch } from "./utils/styles/exact";
 import getStyleLookupMatches from "./utils/styles/lookup";
@@ -27,10 +27,23 @@ export default function checkStrokeStyleMatch(
   )
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
-  // if a stroke doesn't exist in the first place, it's a skip
-  if ((targetNode as RectangleNode).strokes.length === 0) {
+  // Don't do style processing if a stroke color variable is in-use
+  const colorVariables = jp.query(
+    targetNode,
+    "$.strokes[*].boundVariables.color"
+  );
+  if (colorVariables.length > 0)
     return { checkName, matchLevel: "Skip", suggestions: [] };
-  }
+
+  // if a stroke doesn't exist in the first place, it's a skip
+  // also skip if any strokes are hidden
+  const strokes = (targetNode as MinimalStrokesMixin).strokes;
+  if (
+    (strokes && !Array.isArray(strokes)) ||
+    strokes.length === 0 ||
+    strokes.some((f) => f.visible === false)
+  )
+    return { checkName, matchLevel: "Skip", suggestions: [] };
 
   // check if style is exact match
   const exactMatch = isExactStyleMatch("STROKE", styleBucket, targetNode);
@@ -43,19 +56,12 @@ export default function checkStrokeStyleMatch(
       exactMatch: { key: exactMatch.key },
     };
 
-  // :TODO: Temp workaround until we properly support variable linting, fixing, and compliance calculations
-  // Ignore the node if any color variables are in-use
-  const colorVariables = jp.query(targetNode, "$.strokes[*].boundVariables.color");
-  if (colorVariables.length > 0) {
-    return { checkName, matchLevel: "Skip", suggestions: [] };
-  }
-
   if (opts?.hexStyleMap) {
     const { hexStyleMap } = opts;
     const strokeProps = getStyleLookupDefinitions("STROKE");
 
     if (strokeProps) {
-      const [r, g, b, a] = strokeProps.map(prop => {
+      const [r, g, b, a] = strokeProps.map((prop) => {
         const pathToUse =
           typeof figma === "undefined"
             ? prop.nodePath

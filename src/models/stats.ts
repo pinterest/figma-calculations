@@ -45,7 +45,12 @@ export type AdoptionCalculationOptions = {
   includePartialFills?: boolean;
 };
 
-export type LintCheckName = "Text-Style" | "Fill-Style" | "Stroke-Fill-Style";
+export type LintCheckName =
+  | "Text-Style"
+  | "Fill-Style"
+  | "Stroke-Fill-Style"
+  | "Fill-Variable"
+  | "Stroke-Fill-Variable";
 
 export type MatchLevel = "None" | "Partial" | "Full" | "Skip";
 export type LintSuggestion = {
@@ -75,6 +80,14 @@ export type LintCheckPercent = {
   partial: number;
 };
 
+export type AggregateCountsCompliance = {
+  [key in "fills" | "strokes" | "text"]: {
+    attached: number;
+    detached: number;
+    none: number;
+  };
+};
+
 export type AggregateCounts = {
   totalNodes: number;
   hiddenNodes: number;
@@ -87,6 +100,7 @@ export type AggregateCounts = {
       skip: number;
     };
   };
+  compliance: AggregateCountsCompliance;
 };
 
 export type ProcessedNodeTree = {

@@ -1,4 +1,4 @@
-import jp, { nodes } from "jsonpath";
+import jp from "jsonpath";
 
 import { StyleBucket } from "../models/figma";
 import { LintCheck, LintSuggestion } from "../models/stats";
@@ -28,6 +28,28 @@ export default function checkFillStyleMatch(
   )
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
+  // Don't do style processing if a fill color variable is in-use
+  const colorVariables = jp.query(
+    targetNode,
+    "$.fills[*].boundVariables.color"
+  );
+  if (colorVariables.length > 0)
+    return { checkName, matchLevel: "Skip", suggestions: [] };
+
+  // if no fills exist to begin with, skip it
+  // also skip any figma.mixed (symbol) fills (non array)
+  // also skip if any fills are hidden
+  // also skip any image fills
+  const fills = (targetNode as MinimalFillsMixin).fills;
+  if (
+    !fills ||
+    !Array.isArray(fills) ||
+    fills.length === 0 ||
+    fills.some((f) => f.visible === false) ||
+    fills.some((f) => f.type === "IMAGE")
+  )
+    return { checkName, matchLevel: "Skip", suggestions: [] };
+
   // check if style is exact match
   const exactMatch = isExactStyleMatch("FILL", styleBucket, targetNode);
 
@@ -39,33 +61,12 @@ export default function checkFillStyleMatch(
       exactMatch: { key: exactMatch.key },
     };
 
-  // ignore fills if they have images
-  const fillTypes = jp.query(targetNode, "$.fills[*].type");
-
-  if (fillTypes.includes("IMAGE")) {
-    // ignore the node, image fills can be weird
-    return { checkName, matchLevel: "Skip", suggestions: [] };
-  }
-
-  // if no fills exists to begin with, skip it
-  if (fillTypes.length === 0) {
-    // ignore the node, no fill ever existed
-    return { checkName, matchLevel: "Skip", suggestions: [] };
-  }
-
-  // :TODO: Temp workaround until we properly support variable linting, fixing, and compliance calculations
-  // Ignore the node if any color variables are in-use
-  const colorVariables = jp.query(targetNode, "$.fills[*].boundVariables.color");
-  if (colorVariables.length > 0) {
-    return { checkName, matchLevel: "Skip", suggestions: [] };
-  }
-
   if (opts?.hexStyleMap) {
     const { hexStyleMap } = opts;
     const fillProps = getStyleLookupDefinitions("FILL");
 
     if (fillProps) {
-      const [r, g, b, a] = fillProps.map(prop => {
+      const [r, g, b, a] = fillProps.map((prop) => {
         const pathToUse =
           typeof figma === "undefined"
             ? prop.nodePath

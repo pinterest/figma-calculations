@@ -1,7 +1,6 @@
-/* eslint-disable no-undef */
-
 import {
   ComponentBucket,
+  FigmaLocalVariables,
   FigmaStyleType,
   FigmaTeamComponent,
   FigmaTeamStyle,
@@ -16,6 +15,9 @@ import jp from "jsonpath";
 import checkFillStyleMatch from "./fillStyle";
 import checkStrokeStyleMatch from "./strokeStyle";
 import checkTextMatch from "./textStyle";
+import { HexColorToFigmaVariableMap } from "../utils/variables";
+import checkFillVariableMatch from "./fillVariable";
+import checkStrokeVariableMatch from "./strokeVariable";
 
 /**
  * styleLookupMap - required for partial matches
@@ -23,16 +25,18 @@ import checkTextMatch from "./textStyle";
 export type LintCheckOptions = {
   hexStyleMap?: HexStyleMap;
   styleLookupMap?: StyleLookupMap;
+  hexColorToVariableMap?: HexColorToFigmaVariableMap;
 };
 /**
  * Run through all partial matches, and make exceptions depending on rules
  */
 export const runSimilarityChecks = (
   styleBucket: StyleBucket,
+  variables: FigmaLocalVariables,
   targetNode: BaseNode,
   opts?: LintCheckOptions
 ): LintCheck[] => {
-  const checks: ((
+  const styleChecks: ((
     styleBucket: StyleBucket,
     targetNode: BaseNode,
     opts?: LintCheckOptions
@@ -42,9 +46,23 @@ export const runSimilarityChecks = (
     checkFillStyleMatch,
   ];
 
+  const variableChecks: ((
+    variables: FigmaLocalVariables,
+    targetNode: BaseNode,
+    opts?: LintCheckOptions
+  ) => LintCheck)[] = [checkFillVariableMatch, checkStrokeVariableMatch];
+
   const results = [];
-  for (const check of checks) {
+
+  // Style-based checks
+  for (const check of styleChecks) {
     const lintCheck = check(styleBucket, targetNode, opts);
+    results.push(lintCheck);
+  }
+
+  // Variable-based checks
+  for (const check of variableChecks) {
+    const lintCheck = check(variables, targetNode, opts);
     results.push(lintCheck);
   }
 
