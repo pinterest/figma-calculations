@@ -83,14 +83,15 @@ export interface FigmaFile {
   role: "owner" | "editor" | "viewer";
   lastModified: string;
   editorType: "figma" | "figjam";
-  thumbnailUrl: string;
+  thumbnailUrl?: string;
   version: string;
   document: DocumentNode;
   components: { [style_node_id: string]: FigmaTeamComponent };
   componentSets: { [style_node_id: string]: FigmaTeamComponent };
   schemaVersion: number;
   styles: { [style_node_id: string]: FigmaTeamStyle };
-  mainFileKey: string;
+  // The key of the main file for this file. If present, this file is a component or component set.
+  mainFileKey?: string;
   branches?: {
     key: string;
     name: string;
