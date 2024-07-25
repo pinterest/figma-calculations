@@ -36,6 +36,7 @@ export const isExactVariableMatch = (
         variable &&
         (variable.scopes.includes("SHAPE_FILL") ||
           variable.scopes.includes("FRAME_FILL") ||
+          variable.scopes.includes("TEXT_FILL") ||
           variable.scopes.includes("ALL_SCOPES"))
       ) {
         return variable;
