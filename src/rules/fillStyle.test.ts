@@ -141,7 +141,7 @@ const resultsTypes = {
       },
     ],
   },
-  "styleBrandColorkMatch": {
+  "styleBrandColorMatch": {
     "checkName": "Fill-Style",
     "matchLevel": "Partial",
     "suggestions": [
@@ -208,6 +208,6 @@ describe('fillStyle rules', () => {
         styleLookupMap
       });
 
-    expect(results).toStrictEqual(resultsTypes.styleBrandColorkMatch);
+    expect(results).toStrictEqual(resultsTypes.styleBrandColorMatch);
   });
 });
