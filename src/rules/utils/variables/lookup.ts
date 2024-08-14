@@ -42,6 +42,30 @@ export default function getVariableLookupMatches(
     const variables = hexColorToVariableMap[hexColor];
 
     if (variables) {
+      // Filter out variables that don't match the resolvedVariableModes for the node
+      //
+      // The Plugin API ResolvedVariableModes property is an array of values in the form:
+      // {VariableCollectionId:4946b0f5dc6bdc872b0bc1ad0ad5e7f0a348e0ad/3979:69: "265:0"}
+      //
+      // ref: https://www.figma.com/plugin-docs/api/properties/nodes-resolvedvariablemodes/
+      //
+      // :TODO: REST API doesn't have resolvedVariableModes, only explicitVariableModesMap,
+      // We'd need to walk up the tree and calculate it ourselves if we want to use it in the REST API
+      const { resolvedVariableModes } = targetNode as SceneNode;
+      if (resolvedVariableModes && Object.keys(resolvedVariableModes).length > 0) {
+        const resolvedVariableModesMap = new Map(
+          Object.entries(resolvedVariableModes).map(([key, value]) => {
+            const resolvedVariableCollectionKey = key.match(/:(.+)\//)?.[1];
+            return [resolvedVariableCollectionKey, value];
+          })
+        );
+
+        variables = variables.filter(
+          (v) =>
+            resolvedVariableModesMap.get(v.variableCollectionKey) === v.modeId
+        );
+      }
+
       for (const v of variables) {
         suggestions.push({
           message: `Possible Gestalt ${checkName} match with name: ${v.name}`,
