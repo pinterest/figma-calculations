@@ -75,8 +75,11 @@ export default function checkStrokeStyleMatch(
           targetNode.type === "TEXT" ? styleKeys.text : styleKeys.fill;
         if (styleKey) {
           suggestions.push({
+            type: "Style",
             message: `Color Override Exists in Library for hex ${hex}`,
             styleKey,
+            name: hex,
+            description: "Direct hex color mapping override",
           });
         }
         return { matchLevel: "Partial", checkName, suggestions };

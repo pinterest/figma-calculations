@@ -3,7 +3,10 @@ import {
   LintCheck,
   LintSuggestion,
 } from "../../../models/stats";
-import { HexColorToFigmaVariableMap, rgbaToHex } from "../../../utils/variables";
+import {
+  HexColorToFigmaVariableMap,
+  rgbaToHex,
+} from "../../../utils/variables";
 
 export default function getVariableLookupMatches(
   checkName: LintCheckName,
@@ -28,7 +31,7 @@ export default function getVariableLookupMatches(
   ) {
     const paint = paints[0];
 
-    if (paint.visible === false){
+    if (paint.visible === false) {
       return { checkName, matchLevel: "Skip", suggestions: [] };
     }
 
@@ -39,7 +42,7 @@ export default function getVariableLookupMatches(
     };
 
     const hexColor = rgbaToHex(rgba);
-    const variables = hexColorToVariableMap[hexColor];
+    let variables = hexColorToVariableMap[hexColor];
 
     if (variables) {
       // Filter out variables that don't match the resolvedVariableModes for the node
@@ -68,8 +71,19 @@ export default function getVariableLookupMatches(
 
       for (const v of variables) {
         suggestions.push({
+          type: "Variable",
           message: `Possible Gestalt ${checkName} match with name: ${v.name}`,
-          styleKey: v.variableId,
+          name: v.name,
+          hexColor,
+          description: v.description,
+          variableId: v.variableId,
+          variableKey: v.variableKey,
+          variableCollectionId: v.variableCollectionId,
+          variableCollectionKey: v.variableCollectionKey,
+          variableCollectionName: v.variableCollectionName,
+          modeId: v.modeId,
+          modeName: v.modeName,
+          scopes: v.scopes,
         });
       }
     }

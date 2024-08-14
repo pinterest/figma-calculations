@@ -55,8 +55,11 @@ export default function getStyleLookupMatches(
       }
       for (const r of possibleStyles) {
         suggestions.push({
+          type: "Style",
           message: `Possible Gestalt ${checkName} match with name: ${r.name}`,
           styleKey: r.key,
+          name: r.name,
+          description: r.description,
         });
       }
     }

@@ -4,11 +4,14 @@ export type HexColorToFigmaVariableMap = Record<
   string,
   Array<{
     name: string;
+    description: string;
     variableId: string;
+    variableKey: string;
     variableCollectionId: string;
+    variableCollectionKey: string;
     variableCollectionName: string;
     modeId: string;
-    modeName?: string;
+    modeName: string;
     scopes: VariableScope[];
   }>
 >;
@@ -127,11 +130,14 @@ export const createHexColorToVariableMap = (
     if (hexValue) {
       if (!acc[hexValue]) acc[hexValue] = [];
 
-      const { name, variableCollectionId } = variables[variableId];
+      const { name, description, key, variableCollectionId } = variables[variableId];
       acc[hexValue].push({
         name,
+        description,
         variableId,
+        variableKey: key,
         variableCollectionId,
+        variableCollectionKey: variableCollections[variableCollectionId].key,
         variableCollectionName: variableCollections[variableCollectionId].name,
         modeId,
         modeName: variableModeNameMap[modeId],
