@@ -1,7 +1,11 @@
 import { FigmaLocalVariables } from "../models/figma";
 import { LintCheck } from "../models/stats";
 
-import { LintCheckOptions, isNodeOfTypeAndVisible } from ".";
+import {
+  LintCheckOptions,
+  hasValidStrokeToMatch,
+  isNodeOfTypeAndVisible,
+} from ".";
 import { isExactVariableMatch } from "./utils/variables/exact";
 import getVariableLookupMatches from "./utils/variables/lookup";
 
@@ -28,14 +32,7 @@ export default function checkStrokeVariableMatch(
   )
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
-  // If a stroke doesn't exist in the first place, it's a skip
-  // also skip if any strokes are hidden
-  const strokes = (targetNode as MinimalStrokesMixin).strokes;
-  if (
-    (strokes && !Array.isArray(strokes)) ||
-    strokes.length === 0 ||
-    strokes.some((f) => f.visible === false)
-  )
+  if (!hasValidStrokeToMatch(targetNode as MinimalStrokesMixin))
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
   // check if style is exact match

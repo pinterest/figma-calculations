@@ -5,6 +5,7 @@ import { LintCheck, LintSuggestion } from "../models/stats";
 
 import {
   getStyleLookupDefinitions,
+  hasValidFillToMatch,
   isNodeOfTypeAndVisible,
   LintCheckOptions,
 } from ".";
@@ -36,18 +37,8 @@ export default function checkFillStyleMatch(
   if (colorVariables.length > 0)
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
-  // if no fills exist to begin with, skip it
-  // also skip any figma.mixed (symbol) fills (non array)
-  // also skip if any fills are hidden
-  // also skip any image fills
-  const fills = (targetNode as MinimalFillsMixin).fills;
-  if (
-    !fills ||
-    !Array.isArray(fills) ||
-    fills.length === 0 ||
-    fills.some((f) => f.visible === false) ||
-    fills.some((f) => f.type === "IMAGE")
-  )
+
+  if (!hasValidFillToMatch(targetNode as MinimalFillsMixin))
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
   // check if style is exact match

@@ -79,6 +79,29 @@ export function isNodeOfTypeAndVisible(types: string[], node: BaseNode) {
   return types.includes(node.type);
 }
 
+export const hasValidFillToMatch = (node: MinimalFillsMixin) => {
+  const { fills } = node;
+
+  return (
+    fills && // Must have a fills property
+    Array.isArray(fills) && // Not a figma.mixed (symbol) type
+    fills.length > 0 && // Has at least one fill
+    !fills.some((f) => f.visible === false) && // No hidden fills
+    !fills.some((f) => f.type === "IMAGE") // No image fills
+  );
+};
+
+export const hasValidStrokeToMatch = (node: MinimalStrokesMixin) => {
+  const { strokes } = node;
+
+  return (
+    strokes && // Must have a strokes property
+    Array.isArray(strokes) && // Is an array
+    strokes.length > 0 && // Has at least one stroke
+    !strokes.some((f) => f.visible === false) // No hidden strokes
+  );
+};
+
 /**
  *
  * @param styles

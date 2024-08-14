@@ -3,6 +3,7 @@ import { LintCheck, LintSuggestion } from "../models/stats";
 
 import {
   getStyleLookupDefinitions,
+  hasValidStrokeToMatch,
   isNodeOfTypeAndVisible,
   LintCheckOptions,
 } from ".";
@@ -35,14 +36,7 @@ export default function checkStrokeStyleMatch(
   if (colorVariables.length > 0)
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
-  // if a stroke doesn't exist in the first place, it's a skip
-  // also skip if any strokes are hidden
-  const strokes = (targetNode as MinimalStrokesMixin).strokes;
-  if (
-    (strokes && !Array.isArray(strokes)) ||
-    strokes.length === 0 ||
-    strokes.some((f) => f.visible === false)
-  )
+  if (!hasValidStrokeToMatch(targetNode as MinimalStrokesMixin))
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
   // check if style is exact match
