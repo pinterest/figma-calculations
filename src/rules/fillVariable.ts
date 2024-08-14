@@ -21,7 +21,7 @@ export default function checkFillVariableMatch(
   )
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
-  // Don't do variable processing if a fill style in-use
+  // Don't do variable processing if a fill style is in-use
   if (
     (targetNode as MinimalFillsMixin).fillStyleId ||
     (targetNode as any).styles?.fill

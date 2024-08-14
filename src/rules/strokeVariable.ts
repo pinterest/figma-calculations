@@ -25,7 +25,7 @@ export default function checkStrokeVariableMatch(
   )
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
-  // Don't do variable processing if a stroke style in-use
+  // Don't do variable processing if a stroke style is in-use
   if (
     (targetNode as MinimalStrokesMixin).strokeStyleId ||
     (targetNode as any).styles?.stroke
