@@ -1,11 +1,11 @@
 import jp from "jsonpath";
 
-import { getStyleLookupDefinitions, getStyleLookupKey } from "..";
-import { FigmaStyleType, StyleLookupMap } from "../../models/figma";
-import { LintCheckName, LintCheck, LintSuggestion } from "../../models/stats";
+import { getStyleLookupDefinitions, getStyleLookupKey } from "../..";
+import { FigmaStyleType, StyleLookupMap } from "../../../models/figma";
+import { LintCheckName, LintCheck, LintSuggestion } from "../../../models/stats";
 
 /**
- * Check if any sub properties overlap and amtch
+ * Check if any sub properties overlap and match
  * @param checkName
  * @param styles
  * @param propertiesToCheck - list of names to lookup
@@ -55,8 +55,11 @@ export default function getStyleLookupMatches(
       }
       for (const r of possibleStyles) {
         suggestions.push({
+          type: "Style",
           message: `Possible Gestalt ${checkName} match with name: ${r.name}`,
           styleKey: r.key,
+          name: r.name,
+          description: r.description,
         });
       }
     }

@@ -48,6 +48,15 @@ export interface FigmaTeamComponent extends FigmaSharedNode {
     backgroundColorString?: string;
     pageId?: string;
     pageName?: string;
+    // :NOTE: containingStateGroup is unsupported
+    //
+    // "...containingStateGroup is intentionally omitted from the documentation as this property was
+    // accidentally exposed quite a while back and is not officially supported."
+    // https://github.com/figma/rest-api-spec/issues/7#issuecomment-2066390910
+    containingStateGroup?: {
+      name: string;
+      nodeId: string;
+    };
   };
 }
 
@@ -71,17 +80,24 @@ export interface FigmaProjectDetails {
 
 export interface FigmaFile {
   name: string;
-  role: string;
+  role: "owner" | "editor" | "viewer";
   lastModified: string;
-  editorType: string;
-  thumbnailUrl: string;
+  editorType: "figma" | "figjam";
+  thumbnailUrl?: string;
   version: string;
   document: DocumentNode;
   components: { [style_node_id: string]: FigmaTeamComponent };
   componentSets: { [style_node_id: string]: FigmaTeamComponent };
-  schemaVersion: 0;
+  schemaVersion: number;
   styles: { [style_node_id: string]: FigmaTeamStyle };
-  mainFileKey: string;
+  // The key of the main file for this file. If present, this file is a component or component set.
+  mainFileKey?: string;
+  branches?: {
+    key: string;
+    name: string;
+    thumbnail_url: string;
+    last_modified: string;
+  }[];
 }
 
 export interface FigmaPartialFile {
@@ -138,6 +154,9 @@ export interface FigmaPublishedVariable extends FigmaVariableBase {
   readonly updatedAt: string;
 }
 
+export type FigmaLocalVariables = Record<string, FigmaLocalVariable>;
+export type FigmaPublishedVariables = Record<string, FigmaPublishedVariable>;
+
 // Variable Collections
 interface FigmaVariableCollectionBase {
   readonly id: string
@@ -160,6 +179,9 @@ export interface FigmaPublishedVariableCollection extends FigmaVariableCollectio
   subscribed_id: string
   readonly updatedAt: string;
 }
+
+export type FigmaLocalVariableCollections = Record<string, FigmaLocalVariableCollection>;
+export type FigmaPublishedVariableCollections = Record<string, FigmaPublishedVariableCollection>;
 
 // Figma REST API Response Base
 export interface FigmaRestApiResponseBase {
@@ -186,15 +208,15 @@ export interface FigmaRestApiVariableResponseBase {
 // API Response: /v1/files/:file_key/variables/local
 export interface FigmaVariablesLocalResponse extends FigmaRestApiVariableResponseBase {
   meta: {
-    variables: Record<string, FigmaLocalVariable>;
-    variableCollections: Record<string, FigmaLocalVariableCollection>;
+    variables: FigmaLocalVariables;
+    variableCollections: FigmaLocalVariableCollections;
   }
 }
 
 // API Response: /v1/files/:file_key/variables/published
 export interface FigmaVariablesPublishedResponse extends FigmaRestApiVariableResponseBase {
   meta: {
-    variables: Record<string, FigmaPublishedVariable>;
-    variableCollections: Record<string, FigmaPublishedVariableCollection>;
+    variables: FigmaPublishedVariables;
+    variableCollections: FigmaPublishedVariableCollections;
   }
 }

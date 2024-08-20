@@ -4,13 +4,19 @@ import {
   FigmaStyleType,
   PropertyCheck,
   FigmaTeamStyle,
-} from "../../models/figma";
-import { LintCheckName, LintCheck, LintSuggestion } from "../../models/stats";
-
-
+} from "../../../models/figma";
+import {
+  LintCheckName,
+  LintCheck,
+  LintSuggestion,
+} from "../../../models/stats";
 
 /**
- * Check if any sub properties overlap and amtch
+ * Check if any sub properties overlap and match
+ *
+ * WARNING: DEPRECATED
+ * @deprecated Replaced with getStyleLookupMatches()
+ *
  * @param checkName
  * @param styles
  * @param propertiesToCheck
@@ -30,13 +36,12 @@ export default function getPartialStyleMatches(
 
   //return { checkName, matchLevel: "None", suggestions: [] };
 
-  
   const checkPropertyValue = (
     property: PropertyCheck,
     styleValue: any,
     targetValue: any,
     styleNode: FigmaTeamStyle
-  ) => {
+  ): LintSuggestion | undefined => {
     if (property.removeSpaces) {
       styleValue = styleValue.split(" ").join("");
       targetValue = targetValue.split(" ").join("");
@@ -46,19 +51,25 @@ export default function getPartialStyleMatches(
       if (property.matchType == "exact") {
         if (targetValue == styleValue) {
           return {
+            type: "Style",
             message: `Possible Gestalt ${
               property.name || checkName
             } match with name: ${styleNode.name}`,
             styleKey: styleNode.key,
+            name: styleNode.name,
+            description: styleNode.description,
           };
         }
       } else {
         if (styleValue.includes(targetValue)) {
           return {
+            type: "Style",
             message: `Possible Gestalt ${
               property.name || checkName
             } match with name: ${styleNode.name}`,
             styleKey: styleNode.key,
+            name: styleNode.name,
+            description: styleNode.description,
           };
         }
       }
@@ -68,10 +79,13 @@ export default function getPartialStyleMatches(
       if (property.matchType == "exact") {
         if (targetValue == styleValue) {
           return {
+            type: "Style",
             message: `Possible Gestalt ${
               property.name || checkName
             } match with name: ${styleNode.name}`,
             styleKey: styleNode.key,
+            name: styleNode.name,
+            description: styleNode.description,
           };
         }
       } else {
@@ -82,7 +96,6 @@ export default function getPartialStyleMatches(
     return undefined;
   };
 
-  
   // check against all of styles, and that field in a style
   for (const styleId of Object.keys(styles)) {
     const styleNode = styles[styleId];
@@ -134,5 +147,4 @@ export default function getPartialStyleMatches(
   }
 
   return { checkName, matchLevel: "Partial", suggestions };
-  
 }

@@ -3,11 +3,12 @@ import { LintCheck, LintSuggestion } from "../models/stats";
 
 import {
   getStyleLookupDefinitions,
+  hasValidStrokeToMatch,
   isNodeOfTypeAndVisible,
-  LintCheckOptions
+  LintCheckOptions,
 } from ".";
-import { isExactStyleMatch } from "./utils/exact";
-import getStyleLookupMatches from "./utils/lookup";
+import { isExactStyleMatch } from "./utils/styles/exact";
+import getStyleLookupMatches from "./utils/styles/lookup";
 import { figmaRGBToHex } from "../utils/rgbToHex";
 import jp from "jsonpath";
 
@@ -16,7 +17,6 @@ export default function checkStrokeStyleMatch(
   targetNode: BaseNode,
   opts?: LintCheckOptions
 ): LintCheck {
-  // decrement the count, or increment depending on what we find
   const checkName = "Stroke-Fill-Style";
 
   // check if correct Node Type
@@ -28,10 +28,16 @@ export default function checkStrokeStyleMatch(
   )
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
-  // if a stroke doesn't exist in the first place, it's a skip
-  if ((targetNode as RectangleNode).strokes.length === 0) {
+  // Don't do style processing if a stroke color variable is in-use
+  const colorVariables = jp.query(
+    targetNode,
+    "$.strokes[*].boundVariables.color"
+  );
+  if (colorVariables.length > 0)
     return { checkName, matchLevel: "Skip", suggestions: [] };
-  }
+
+  if (!hasValidStrokeToMatch(targetNode as MinimalStrokesMixin))
+    return { checkName, matchLevel: "Skip", suggestions: [] };
 
   // check if style is exact match
   const exactMatch = isExactStyleMatch("STROKE", styleBucket, targetNode);
@@ -44,19 +50,12 @@ export default function checkStrokeStyleMatch(
       exactMatch: { key: exactMatch.key },
     };
 
-  // :TODO: Temp workaround until we properly support variable linting, fixing, and compliance calculations
-  // Ignore the node if any color variables are in-use
-  const colorVariables = jp.query(targetNode, "$.strokes[*].boundVariables.color");
-  if (colorVariables.length > 0) {
-    return { checkName, matchLevel: "Skip", suggestions: [] };
-  }
-
   if (opts?.hexStyleMap) {
     const { hexStyleMap } = opts;
     const strokeProps = getStyleLookupDefinitions("STROKE");
 
     if (strokeProps) {
-      const [r, g, b, a] = strokeProps.map(prop => {
+      const [r, g, b, a] = strokeProps.map((prop) => {
         const pathToUse =
           typeof figma === "undefined"
             ? prop.nodePath
@@ -76,8 +75,11 @@ export default function checkStrokeStyleMatch(
           targetNode.type === "TEXT" ? styleKeys.text : styleKeys.fill;
         if (styleKey) {
           suggestions.push({
+            type: "Style",
             message: `Color Override Exists in Library for hex ${hex}`,
             styleKey,
+            name: hex,
+            description: "Direct hex color mapping override",
           });
         }
         return { matchLevel: "Partial", checkName, suggestions };

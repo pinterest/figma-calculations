@@ -45,13 +45,40 @@ export type AdoptionCalculationOptions = {
   includePartialFills?: boolean;
 };
 
-export type LintCheckName = "Text-Style" | "Fill-Style" | "Stroke-Fill-Style";
+export type LintCheckName =
+  | "Text-Style"
+  | "Fill-Style"
+  | "Stroke-Fill-Style"
+  | "Fill-Variable"
+  | "Stroke-Fill-Variable";
 
 export type MatchLevel = "None" | "Partial" | "Full" | "Skip";
-export type LintSuggestion = {
+
+type LintSuggestionBase = {
   message: string;
+  name: string;
+  description?: string;
+  hexColor?: string;
+};
+
+export type LintSuggestionStyle = LintSuggestionBase & {
+  type: "Style"
   styleKey: string;
 };
+
+export type LintSuggestionVariable = LintSuggestionBase & {
+  type: "Variable";
+  variableId: string;
+  variableKey: string;
+  variableCollectionId: string;
+  variableCollectionKey: string;
+  variableCollectionName: string;
+  modeId: string;
+  modeName: string;
+  scopes: VariableScope[];
+}
+
+export type LintSuggestion = LintSuggestionStyle | LintSuggestionVariable;
 
 export type LintCheck = {
   checkName: LintCheckName;
@@ -59,12 +86,14 @@ export type LintCheck = {
   suggestions: LintSuggestion[];
   exactMatch?: { key: string };
 };
+
 export type ProcessedNode = {
   id: string;
   name: string;
   type: string;
   lintChecks: LintCheck[];
   belongsToLibraryComponent: boolean;
+  isRootComponentNode: boolean;
   similarComponents: string[];
 };
 
@@ -72,6 +101,14 @@ export type LintCheckPercent = {
   checkName: LintCheckName;
   full: number;
   partial: number;
+};
+
+export type AggregateCountsCompliance = {
+  [key in "fills" | "strokes" | "text"]: {
+    attached: number;
+    detached: number;
+    none: number;
+  };
 };
 
 export type AggregateCounts = {
@@ -86,6 +123,7 @@ export type AggregateCounts = {
       skip: number;
     };
   };
+  compliance: AggregateCountsCompliance;
 };
 
 export type ProcessedNodeTree = {

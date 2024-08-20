@@ -1,5 +1,10 @@
 import { FigmaCalculator } from "..";
-import { FigmaTeamComponent, FigmaTeamStyle } from "../models/figma";
+import {
+  FigmaLocalVariableCollections,
+  FigmaLocalVariables,
+  FigmaTeamComponent,
+  FigmaTeamStyle,
+} from "../models/figma";
 import {
   AdoptionCalculationOptions,
   AggregateCounts,
@@ -14,6 +19,11 @@ import {
   runSimilarityChecks,
 } from "../rules";
 import { makePercent } from "./percent";
+import {
+  HexColorToFigmaVariableMap,
+  createHexColorToVariableMap,
+  getCollectionVariables,
+} from "./variables";
 
 export type ProcessedNodeOptions = {
   onProcessNode?: (node: ProcessedNode) => void;
@@ -34,10 +44,34 @@ export function getProcessedNodes(
   rootNode: BaseNode,
   components: FigmaTeamComponent[],
   allStyles: FigmaTeamStyle[],
+  colorVariableCollectionIds: string[],
+  variables: FigmaLocalVariables,
+  variableCollections: FigmaLocalVariableCollections,
   opts?: ProcessedNodeOptions
 ) {
   const styleBuckets = generateStyleBucket(allStyles);
   const styleLookupMap = generateStyleLookup(styleBuckets);
+
+  // Just grab the variables from specific color variable collection(s)
+  let colorVariableIds: string[] = [];
+  let hexColorToVariableMap: HexColorToFigmaVariableMap = {};
+  if (
+    colorVariableCollectionIds.length > 0 &&
+    variables &&
+    Object.keys(variables).length > 0 &&
+    variableCollections &&
+    Object.keys(variableCollections).length > 0
+  ) {
+    colorVariableIds = getCollectionVariables(
+      colorVariableCollectionIds,
+      variableCollections
+    );
+    hexColorToVariableMap = createHexColorToVariableMap(
+      colorVariableIds,
+      variables,
+      variableCollections
+    );
+  }
 
   const processedNodes: ProcessedNode[] = [];
 
@@ -75,6 +109,7 @@ export function getProcessedNodes(
     // add the top-level node
     addToProcessedNodes({
       id: nodeId,
+      isRootComponentNode: true,
       ...baseInstanceComponent,
     });
 
@@ -83,16 +118,18 @@ export function getProcessedNodes(
     for (const layerNodeId of layers) {
       addToProcessedNodes({
         id: layerNodeId,
+        isRootComponentNode: false,
         ...baseInstanceComponent,
       });
     }
   }
 
-  // run lint checks on the remaning nodes
+  // run lint checks on the remaining nodes
   for (const node of nonLibraryNodes) {
-    const result = runSimilarityChecks(styleBuckets, node, {
-      styleLookupMap,
+    const result = runSimilarityChecks(styleBuckets, variables, node, {
       ...opts,
+      styleLookupMap,
+      hexColorToVariableMap,
     });
 
     addToProcessedNodes({
@@ -101,6 +138,7 @@ export function getProcessedNodes(
       type: node.type,
       lintChecks: result,
       belongsToLibraryComponent: false,
+      isRootComponentNode: false,
       similarComponents: [],
     });
   }

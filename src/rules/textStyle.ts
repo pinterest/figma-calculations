@@ -2,9 +2,8 @@ import { StyleBucket } from "../models/figma";
 import { LintCheck } from "../models/stats";
 
 import { isNodeOfTypeAndVisible, LintCheckOptions } from ".";
-import { isExactStyleMatch } from "./utils/exact";
-
-import getStyleLookupMatches from "./utils/lookup";
+import { isExactStyleMatch } from "./utils/styles/exact";
+import getStyleLookupMatches from "./utils/styles/lookup";
 
 export default function checkTextMatch(
   styleBucket: StyleBucket,
