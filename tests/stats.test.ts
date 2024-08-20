@@ -176,7 +176,7 @@ describe("Do Test File Cases Pass?", () => {
             if (node.name.includes("Web")) {
               for (const result of results) {
                 if (result.checkName === "Text-Style") {
-                  expect(result.suggestions.length).toBe(2);
+                  expect(result.suggestions.length).toBe(3);
                 }
               }
             }
