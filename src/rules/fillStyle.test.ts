@@ -137,7 +137,10 @@ const resultsTypes = {
     "suggestions": [
       {
         "message": "Color Override Exists in Library for hex #000000",
+        "name": "#000000",
+        "description": "Direct hex color mapping override",
         "styleKey": "774cae09471c39640f80ed5b59f2804859709ad9",
+        "type": "Style",
       },
     ],
   },
@@ -147,7 +150,10 @@ const resultsTypes = {
     "suggestions": [
       {
         "message": "Possible Gestalt Fill-Style match with name: Icon/Light-mode/$color-text-icon-brand-primary",
+        "name": "Icon/Light-mode/$color-text-icon-brand-primary",
+        "description": "Used on text and icon solely to represent the Pinterest brand.\n\nApplies to both themes (light and dark mode).",
         "styleKey": "3204b5a3bbe854cf4787cc2d8a4077a2074e6122",
+        "type": "Style",
       },
     ],
   }
