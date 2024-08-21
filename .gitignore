@@ -9,3 +9,6 @@ tests/token.js
 src/examples/token.ts
 comps.json
 styles.json
+
+// NPM pack archive files
+figma-calculations-*.tgz
