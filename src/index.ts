@@ -352,7 +352,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
     const isLibraryComponent = (instanceNode: any) => {
       // if it's a web file, then check the componentId else the mainComponent property to get the key
       const componentKey =
-        instanceNode.componentId || instanceNode.mainComponent.key;
+        instanceNode.componentId || instanceNode.mainComponent?.key;
 
       if (!componentKey) {
         return false;
