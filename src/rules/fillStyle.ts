@@ -1,7 +1,7 @@
 import jp from "jsonpath";
 
 import { StyleBucket } from "../models/figma";
-import { LintCheck, LintSuggestion } from "../models/stats";
+import { LintCheck, LintCheckName, LintSuggestion } from "../models/stats";
 
 import {
   getStyleLookupDefinitions,
@@ -18,7 +18,7 @@ export default function checkFillStyleMatch(
   targetNode: BaseNode,
   opts?: LintCheckOptions
 ): LintCheck {
-  const checkName = "Fill-Style";
+  const checkName: LintCheckName = "Fill-Style";
 
   // check if correct Node Type
   // REST API uses "REGULAR_POLYGON" but Figma uses "POLYGON"
@@ -37,7 +37,6 @@ export default function checkFillStyleMatch(
   );
   if (colorVariables.length > 0)
     return { checkName, matchLevel: "Skip", suggestions: [] };
-
 
   if (!hasValidFillToMatch(targetNode as MinimalFillsMixin))
     return { checkName, matchLevel: "Skip", suggestions: [] };
@@ -82,7 +81,7 @@ export default function checkFillStyleMatch(
             message: `Color Override Exists in Library for hex ${hex}`,
             styleKey,
             name: hex,
-            description: "Direct hex color mapping override"
+            description: "Direct hex color mapping override",
           });
         }
         return { matchLevel: "Partial", checkName, suggestions };

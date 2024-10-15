@@ -1,7 +1,11 @@
 import { FigmaLocalVariables } from "../models/figma";
-import { LintCheck } from "../models/stats";
+import { LintCheck, LintCheckName } from "../models/stats";
 
-import { LintCheckOptions, hasValidFillToMatch, isNodeOfTypeAndVisible } from ".";
+import {
+  LintCheckOptions,
+  hasValidFillToMatch,
+  isNodeOfTypeAndVisible,
+} from ".";
 import { isExactVariableMatch } from "./utils/variables/exact";
 import getVariableLookupMatches from "./utils/variables/lookup";
 
@@ -10,7 +14,7 @@ export default function checkFillVariableMatch(
   targetNode: BaseNode,
   opts?: LintCheckOptions
 ): LintCheck {
-  const checkName = "Fill-Variable";
+  const checkName: LintCheckName = "Fill-Variable";
 
   // Check if correct Node Type
   // REST API uses "REGULAR_POLYGON" but Figma uses "POLYGON"

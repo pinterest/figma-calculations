@@ -1,5 +1,5 @@
 import { FigmaLocalVariables } from "../models/figma";
-import { LintCheck } from "../models/stats";
+import { LintCheck, LintCheckName } from "../models/stats";
 
 import {
   LintCheckOptions,
@@ -14,7 +14,7 @@ export default function checkStrokeVariableMatch(
   targetNode: BaseNode,
   opts?: LintCheckOptions
 ): LintCheck {
-  const checkName = "Stroke-Fill-Variable";
+  const checkName: LintCheckName = "Stroke-Fill-Variable";
 
   // Check if correct Node Type
   // REST API uses "REGULAR_POLYGON" but Figma uses "POLYGON"

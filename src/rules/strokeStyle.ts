@@ -1,5 +1,5 @@
 import { StyleBucket } from "../models/figma";
-import { LintCheck, LintSuggestion } from "../models/stats";
+import { LintCheck, LintCheckName, LintSuggestion } from "../models/stats";
 
 import {
   getStyleLookupDefinitions,
@@ -17,7 +17,7 @@ export default function checkStrokeStyleMatch(
   targetNode: BaseNode,
   opts?: LintCheckOptions
 ): LintCheck {
-  const checkName = "Stroke-Fill-Style";
+  const checkName: LintCheckName = "Stroke-Fill-Style";
 
   // check if correct Node Type
   // REST API uses "REGULAR_POLYGON" but Figma uses "POLYGON"
