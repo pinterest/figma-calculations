@@ -52,6 +52,7 @@ export default function checkStrokeVariableMatch(
     const { matchLevel, suggestions } = getVariableLookupMatches(
       checkName,
       opts.hexColorToVariableMap,
+      {}, // opts.roundingToVariableMap not used in this check
       "STROKE",
       targetNode
     );

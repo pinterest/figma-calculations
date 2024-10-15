@@ -15,9 +15,13 @@ import jp from "jsonpath";
 import checkFillStyleMatch from "./fillStyle";
 import checkStrokeStyleMatch from "./strokeStyle";
 import checkTextMatch from "./textStyle";
-import { HexColorToFigmaVariableMap } from "../utils/variables";
+import {
+  HexColorToFigmaVariableMap,
+  RoundingToFigmaVariableMap,
+} from "../utils/variables";
 import checkFillVariableMatch from "./fillVariable";
 import checkStrokeVariableMatch from "./strokeVariable";
+import checkRoundingVariableMatch from "./roundingVariable";
 
 /**
  * styleLookupMap - required for partial matches
@@ -26,6 +30,7 @@ export type LintCheckOptions = {
   hexStyleMap?: HexStyleMap;
   styleLookupMap?: StyleLookupMap;
   hexColorToVariableMap?: HexColorToFigmaVariableMap;
+  roundingToVariableMap?: RoundingToFigmaVariableMap;
 };
 /**
  * Run through all partial matches, and make exceptions depending on rules
@@ -50,7 +55,11 @@ export const runSimilarityChecks = (
     variables: FigmaLocalVariables,
     targetNode: BaseNode,
     opts?: LintCheckOptions
-  ) => LintCheck)[] = [checkFillVariableMatch, checkStrokeVariableMatch];
+  ) => LintCheck)[] = [
+    checkFillVariableMatch,
+    checkStrokeVariableMatch,
+    checkRoundingVariableMatch,
+  ];
 
   const results = [];
 
@@ -88,6 +97,15 @@ export const hasValidFillToMatch = (node: MinimalFillsMixin) => {
     fills.length > 0 && // Has at least one fill
     !fills.some((f) => f.visible === false) && // No hidden fills
     !fills.some((f) => f.type === "IMAGE") // No image fills
+  );
+};
+
+export const hasValidRoundingToMatch = (node: CornerMixin) => {
+  const { cornerRadius } = node;
+
+  return (
+    cornerRadius !== undefined && // Must have a cornerRadius property
+    cornerRadius !== 0 // Skip default 0 value corner radius nodes
   );
 };
 

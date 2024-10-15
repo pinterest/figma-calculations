@@ -3,41 +3,33 @@ import { LintCheck, LintCheckName } from "../models/stats";
 
 import {
   LintCheckOptions,
-  hasValidFillToMatch,
+  hasValidRoundingToMatch,
   isNodeOfTypeAndVisible,
 } from ".";
 import { isExactVariableMatch } from "./utils/variables/exact";
 import getVariableLookupMatches from "./utils/variables/lookup";
 
-export default function checkFillVariableMatch(
+export default function checkRoundingVariableMatch(
   variables: FigmaLocalVariables,
   targetNode: BaseNode,
   opts?: LintCheckOptions
 ): LintCheck {
-  const checkName: LintCheckName = "Fill-Variable";
+  const checkName: LintCheckName = "Rounding-Variable";
 
   // Check if correct Node Type
-  // REST API uses "REGULAR_POLYGON" but Figma uses "POLYGON"
   if (
     !isNodeOfTypeAndVisible(
-      ["ELLIPSE", "INSTANCE", "POLYGON", "REGULAR_POLYGON", "RECTANGLE", "STAR", "TEXT", "VECTOR"],
+      ["ELLIPSE", "INSTANCE", "POLYGON", "RECTANGLE", "STAR", "VECTOR"],
       targetNode
     )
   )
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
-  // Don't do variable processing if a fill style is in-use
-  if (
-    (targetNode as MinimalFillsMixin).fillStyleId ||
-    (targetNode as any).styles?.fill
-  )
-    return { checkName, matchLevel: "Skip", suggestions: [] };
-
-  if (!hasValidFillToMatch(targetNode as MinimalFillsMixin))
+  if (!hasValidRoundingToMatch(targetNode as CornerMixin))
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
   // check if variable is exact match
-  const exactMatch = isExactVariableMatch("FILL", variables, targetNode);
+  const exactMatch = isExactVariableMatch("ROUNDING", variables, targetNode);
 
   if (exactMatch)
     return {
@@ -48,12 +40,12 @@ export default function checkFillVariableMatch(
     };
 
   // Variable matching
-  if (opts?.hexColorToVariableMap) {
+  if (opts?.roundingToVariableMap) {
     const { matchLevel, suggestions } = getVariableLookupMatches(
       checkName,
-      opts.hexColorToVariableMap,
-      {}, // opts.roundingToVariableMap not used in this check
-      "FILL",
+      {}, // opts.hexColorToVariableMap not used in this check
+      opts.roundingToVariableMap,
+      "ROUNDING",
       targetNode
     );
 
