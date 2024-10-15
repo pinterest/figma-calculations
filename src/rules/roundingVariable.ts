@@ -3,40 +3,33 @@ import { LintCheck, LintCheckName } from "../models/stats";
 
 import {
   LintCheckOptions,
-  hasValidStrokeToMatch,
+  hasValidRoundingToMatch,
   isNodeOfTypeAndVisible,
 } from ".";
 import { isExactVariableMatch } from "./utils/variables/exact";
 import getVariableLookupMatches from "./utils/variables/lookup";
 
-export default function checkStrokeVariableMatch(
+export default function checkRoundingVariableMatch(
   variables: FigmaLocalVariables,
   targetNode: BaseNode,
   opts?: LintCheckOptions
 ): LintCheck {
-  const checkName: LintCheckName = "Stroke-Fill-Variable";
+  const checkName: LintCheckName = "Rounding-Variable";
 
   // Check if correct Node Type
   if (
     !isNodeOfTypeAndVisible(
-      ["ELLIPSE", "INSTANCE", "POLYGON", "RECTANGLE", "STAR", "TEXT", "VECTOR"],
+      ["ELLIPSE", "INSTANCE", "POLYGON", "RECTANGLE", "STAR", "VECTOR"],
       targetNode
     )
   )
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
-  // Don't do variable processing if a stroke style is in-use
-  if (
-    (targetNode as MinimalStrokesMixin).strokeStyleId ||
-    (targetNode as any).styles?.stroke
-  )
+  if (!hasValidRoundingToMatch(targetNode as CornerMixin))
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
-  if (!hasValidStrokeToMatch(targetNode as MinimalStrokesMixin))
-    return { checkName, matchLevel: "Skip", suggestions: [] };
-
-  // check if style is exact match
-  const exactMatch = isExactVariableMatch("STROKE", variables, targetNode);
+  // check if variable is exact match
+  const exactMatch = isExactVariableMatch("ROUNDING", variables, targetNode);
 
   if (exactMatch)
     return {
@@ -47,12 +40,12 @@ export default function checkStrokeVariableMatch(
     };
 
   // Variable matching
-  if (opts?.hexColorToVariableMap) {
+  if (opts?.roundingToVariableMap) {
     const { matchLevel, suggestions } = getVariableLookupMatches(
       checkName,
-      opts.hexColorToVariableMap,
-      {}, // opts.roundingToVariableMap not used in this check
-      "STROKE",
+      {}, // opts.hexColorToVariableMap not used in this check
+      opts.roundingToVariableMap,
+      "ROUNDING",
       targetNode
     );
 

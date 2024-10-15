@@ -51,6 +51,7 @@ export default function checkFillVariableMatch(
     const { matchLevel, suggestions } = getVariableLookupMatches(
       checkName,
       opts.hexColorToVariableMap,
+      {}, // opts.roundingToVariableMap not used in this check
       "FILL",
       targetNode
     );
