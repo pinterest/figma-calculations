@@ -2,7 +2,7 @@ import jp from "jsonpath";
 
 import { getStyleLookupDefinitions, getStyleLookupKey } from "../..";
 import { FigmaStyleType, StyleLookupMap } from "../../../models/figma";
-import { LintCheckName, LintCheck, LintSuggestion } from "../../../models/stats";
+import { LintCheckName, LintCheck, LintSuggestionStyle } from "../../../models/stats";
 
 /**
  * Check if any sub properties overlap and match
@@ -18,7 +18,7 @@ export default function getStyleLookupMatches(
   styleType: FigmaStyleType | "STROKE",
   targetNode: BaseNode
 ): LintCheck {
-  const suggestions: LintSuggestion[] = [];
+  const suggestions: LintSuggestionStyle[] = [];
 
   const propsToCheck = getStyleLookupDefinitions(styleType);
 

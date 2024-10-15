@@ -1,7 +1,7 @@
 import {
   LintCheckName,
   LintCheck,
-  LintSuggestion,
+  LintSuggestionVariable,
 } from "../../../models/stats";
 import {
   HexColorToFigmaVariableMap,
@@ -14,8 +14,8 @@ export default function getVariableLookupMatches(
   variableType: "FILL" | "STROKE",
   targetNode: BaseNode
 ): LintCheck {
-  const suggestions: LintSuggestion[] = [];
   let paints: readonly Paint[] | typeof figma.mixed | undefined;
+  const suggestions: LintSuggestionVariable[] = [];
 
   if (variableType === "FILL") paints = (targetNode as MinimalFillsMixin).fills;
   else if (variableType === "STROKE")
