@@ -1,5 +1,5 @@
 import { StyleBucket } from "../models/figma";
-import { LintCheck } from "../models/stats";
+import { LintCheck, LintCheckName } from "../models/stats";
 
 import { isNodeOfTypeAndVisible, LintCheckOptions } from ".";
 import { isExactStyleMatch } from "./utils/styles/exact";
@@ -10,7 +10,7 @@ export default function checkTextMatch(
   targetNode: BaseNode,
   opts?: LintCheckOptions
 ): LintCheck {
-  const checkName = "Text-Style";
+  const checkName: LintCheckName = "Text-Style";
   // console.log(targetNode);
   // check if correct Node Type
   if (!isNodeOfTypeAndVisible(["TEXT"], targetNode))
