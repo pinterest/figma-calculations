@@ -1,19 +1,23 @@
 import { FigmaLocalVariableCollections, FigmaLocalVariables } from "../models/figma";
 
+export type FigmaVariableMapVariable = {
+  name: string;
+  description: string;
+  variableId: string;
+  variableKey: string;
+  variableCollectionId: string;
+  variableCollectionKey: string;
+  variableCollectionName: string;
+  variableCollectionDefaultModeId: string;
+  modeId: string;
+  modeName: string;
+  scopes: VariableScope[];
+};
+
 export type HexColorToFigmaVariableMap = Record<
   string,
-  Array<{
-    name: string;
-    description: string;
-    variableId: string;
-    variableKey: string;
-    variableCollectionId: string;
-    variableCollectionKey: string;
-    variableCollectionName: string;
-    modeId: string;
-    modeName: string;
-    scopes: VariableScope[];
-  }>
+  FigmaVariableMapVariable[]
+>;
 >;
 
 // Allow strictNullChecks to properly detect null filtering using a filter()
@@ -139,6 +143,7 @@ export const createHexColorToVariableMap = (
         variableCollectionId,
         variableCollectionKey: variableCollections[variableCollectionId].key,
         variableCollectionName: variableCollections[variableCollectionId].name,
+        variableCollectionDefaultModeId: variableCollections[variableCollectionId].defaultModeId,
         modeId,
         modeName: variableModeNameMap[modeId],
         scopes: variables[variableId].scopes,

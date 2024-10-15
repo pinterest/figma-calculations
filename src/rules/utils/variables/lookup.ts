@@ -44,30 +44,52 @@ export default function getVariableLookupMatches(
     const hexColor = rgbaToHex(rgba);
     let variables = hexColorToVariableMap[hexColor];
 
-    if (variables) {
-      // Filter out variables that don't match the resolvedVariableModes for the node
-      //
-      // The Plugin API ResolvedVariableModes property is an array of values in the form:
-      // {VariableCollectionId:4946b0f5dc6bdc872b0bc1ad0ad5e7f0a348e0ad/3979:69: "265:0"}
-      //
-      // ref: https://www.figma.com/plugin-docs/api/properties/nodes-resolvedvariablemodes/
-      //
-      // :TODO: REST API doesn't have resolvedVariableModes, only explicitVariableModesMap,
-      // We'd need to walk up the tree and calculate it ourselves if we want to use it in the REST API
-      const { resolvedVariableModes } = targetNode as SceneNode;
-      if (resolvedVariableModes && Object.keys(resolvedVariableModes).length > 0) {
-        const resolvedVariableModesMap = new Map(
-          Object.entries(resolvedVariableModes).map(([key, value]) => {
-            const resolvedVariableCollectionKey = key.match(/:(.+)\//)?.[1];
-            return [resolvedVariableCollectionKey, value];
-          })
-        );
+  if (variables) {
+    // Filter out variables that don't match the resolvedVariableModes for the node
+    //
+    // The Plugin API resolvedVariableModes property is an array of values in the form:
+    // {VariableCollectionId:4946b0f5dc6bdc872b0bc1ad0ad5e7f0a348e0ad/3979:69: "265:0"}
+    //
+    // ref: https://www.figma.com/plugin-docs/api/properties/nodes-resolvedvariablemodes/
+    //
+    // Note: The Figma REST API doesn't have resolvedVariableModes, only explicitVariableModesMap,
+    // so we need to walk up the node hierarchy and calculate it ourselves if we want to use it
+    // for REST API loaded files/pages.
+    //
+    // Also, starting in Oct 2024.. the Plugin API no longer generates the resolvedVariableModes object
+    // for nodes that aren't using any variables, so either way we need to make our own by using
+    // explicitVariableModes *sigh*
 
-        variables = variables.filter(
-          (v) =>
-            resolvedVariableModesMap.get(v.variableCollectionKey) === v.modeId
-        );
+    let resolvedVariableModesMap = new Map<string, string>();
+
+    // Walk up all the node parents, collecting and merging the explicitVariableModes
+    // to calculate our own equivalent resolvedVariableModes... and in the form of a
+    // lookup map for faster filtering
+    let currentNode = targetNode as SceneNode | BaseNode | null;
+    while (currentNode && currentNode.type !== "DOCUMENT") {
+      const modes = currentNode.explicitVariableModes;
+
+      for (const [key, value] of Object.entries(modes)) {
+        const collectionKey = key.match(/:(.+)\//)?.[1];
+
+        // Check if the key already exists in the map to ensure the closest parent mode takes precedence
+        if (collectionKey && !resolvedVariableModesMap.has(collectionKey)) {
+          resolvedVariableModesMap.set(collectionKey, value);
+        }
       }
+
+      currentNode = currentNode.parent;
+    }
+
+    // Filter down the list of variables to those that either match the current resolvedVariableMode
+    // for the node, if it exists, otherwise use the collection's default mode
+    variables = variables.filter((v) => {
+      const modeToMatch =
+        resolvedVariableModesMap.get(v.variableCollectionKey) ||
+        v.variableCollectionDefaultModeId;
+
+      return v.modeId === modeToMatch;
+    });
 
       for (const v of variables) {
         suggestions.push({
