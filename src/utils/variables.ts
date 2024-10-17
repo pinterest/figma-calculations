@@ -223,8 +223,6 @@ export const createRoundingToVariableMap = (
     .filter(nonNullable)
     .flat();
 
-  console.log("variableRoundingValues", variableRoundingValues);
-
   // Create a lookup map of mode ids to their names
   const variableModeNameMap = Object.values(variableCollections).reduce<Record<string, string>>((acc, { modes }) => {
     modes.forEach(({ modeId, name }) => {
@@ -232,8 +230,6 @@ export const createRoundingToVariableMap = (
     });
     return acc;
   }, {});
-
-  console.log("variableModeNameMap", variableModeNameMap);
 
   return variableRoundingValues.reduce<RoundingToFigmaVariableMap>((acc, { value, variableId, modeId }) => {
     if (value !== null) {
