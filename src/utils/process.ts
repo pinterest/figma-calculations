@@ -5,12 +5,7 @@ import {
   FigmaTeamComponent,
   FigmaTeamStyle,
 } from "../models/figma";
-import {
-  AdoptionCalculationOptions,
-  AggregateCounts,
-  LintCheckName,
-  ProcessedNode,
-} from "../models/stats";
+import { AggregateCounts, LintCheckName, ProcessedNode } from "../models/stats";
 import FigmaDocumentParser from "../parser";
 import {
   generateStyleBucket,
@@ -21,7 +16,9 @@ import {
 import { makePercent } from "./percent";
 import {
   HexColorToFigmaVariableMap,
+  RoundingToFigmaVariableMap,
   createHexColorToVariableMap,
+  createRoundingToVariableMap,
   getCollectionVariables,
 } from "./variables";
 
@@ -45,6 +42,7 @@ export function getProcessedNodes(
   components: FigmaTeamComponent[],
   allStyles: FigmaTeamStyle[],
   colorVariableCollectionIds: string[],
+  roundingVariableCollectionIds: string[],
   variables: FigmaLocalVariables,
   variableCollections: FigmaLocalVariableCollections,
   opts?: ProcessedNodeOptions
@@ -52,7 +50,7 @@ export function getProcessedNodes(
   const styleBuckets = generateStyleBucket(allStyles);
   const styleLookupMap = generateStyleLookup(styleBuckets);
 
-  // Just grab the variables from specific color variable collection(s)
+  // Grab the variables from specific color variable collection(s)
   let colorVariableIds: string[] = [];
   let hexColorToVariableMap: HexColorToFigmaVariableMap = {};
   if (
@@ -68,6 +66,27 @@ export function getProcessedNodes(
     );
     hexColorToVariableMap = createHexColorToVariableMap(
       colorVariableIds,
+      variables,
+      variableCollections
+    );
+  }
+
+  // Grab the variables from specific rounding variable collection(s)
+  let roundingVariableIds: string[] = [];
+  let roundingToVariableMap: RoundingToFigmaVariableMap = {};
+  if (
+    roundingVariableCollectionIds.length > 0 &&
+    variables &&
+    Object.keys(variables).length > 0 &&
+    variableCollections &&
+    Object.keys(variableCollections).length > 0
+  ) {
+    roundingVariableIds = getCollectionVariables(
+      roundingVariableCollectionIds,
+      variableCollections
+    );
+    roundingToVariableMap = createRoundingToVariableMap(
+      roundingVariableIds,
       variables,
       variableCollections
     );
@@ -130,6 +149,7 @@ export function getProcessedNodes(
       ...opts,
       styleLookupMap,
       hexColorToVariableMap,
+      roundingToVariableMap,
     });
 
     addToProcessedNodes({
