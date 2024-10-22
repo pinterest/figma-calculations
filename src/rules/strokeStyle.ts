@@ -20,9 +20,10 @@ export default function checkStrokeStyleMatch(
   const checkName = "Stroke-Fill-Style";
 
   // check if correct Node Type
+  // REST API uses "REGULAR_POLYGON" but Figma uses "POLYGON"
   if (
     !isNodeOfTypeAndVisible(
-      ["ELLIPSE", "INSTANCE", "POLYGON", "RECTANGLE", "STAR", "TEXT", "VECTOR"],
+      ["ELLIPSE", "INSTANCE", "LINE", "POLYGON", "REGULAR_POLYGON", "RECTANGLE", "STAR", "TEXT", "VECTOR"],
       targetNode
     )
   )
