@@ -108,11 +108,8 @@ export const isExactVariableMatch = (
 
         // If they all match, return the first one
         // :TODO: Do callers use this returned variable key?
-        return matchingVariables.length === 4
-          ? matchingVariables[0]
-          : undefined;
+        if (matchingVariables.length === 4) return matchingVariables[0];
       }
-
       break;
 
     default: {
