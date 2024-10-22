@@ -17,9 +17,10 @@ export default function checkRoundingVariableMatch(
   const checkName: LintCheckName = "Rounding-Variable";
 
   // Check if correct Node Type
+  // REST API uses "REGULAR_POLYGON" but Figma uses "POLYGON"
   if (
     !isNodeOfTypeAndVisible(
-      ["ELLIPSE", "INSTANCE", "POLYGON", "RECTANGLE", "STAR", "VECTOR"],
+      ["INSTANCE", "POLYGON", "REGULAR_POLYGON", "RECTANGLE", "STAR", "VECTOR"],
       targetNode
     )
   )
