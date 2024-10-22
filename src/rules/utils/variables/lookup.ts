@@ -1,48 +1,81 @@
 import {
   LintCheckName,
   LintCheck,
-  LintSuggestion,
+  LintSuggestionVariable,
 } from "../../../models/stats";
 import {
+  FigmaVariableMapVariable,
   HexColorToFigmaVariableMap,
   rgbaToHex,
+  RoundingToFigmaVariableMap,
 } from "../../../utils/variables";
 
 export default function getVariableLookupMatches(
   checkName: LintCheckName,
   hexColorToVariableMap: HexColorToFigmaVariableMap,
-  variableType: "FILL" | "STROKE",
+  roundingToVariableMap: RoundingToFigmaVariableMap,
+  variableType: "FILL" | "ROUNDING" | "STROKE",
   targetNode: BaseNode
 ): LintCheck {
-  const suggestions: LintSuggestion[] = [];
-  let paints: readonly Paint[] | typeof figma.mixed | undefined;
+  const suggestions: LintSuggestionVariable[] = [];
+  let variables: FigmaVariableMapVariable[] | undefined;
+  let hexColor: string | undefined;
 
-  if (variableType === "FILL") paints = (targetNode as MinimalFillsMixin).fills;
-  else if (variableType === "STROKE")
-    paints = (targetNode as MinimalStrokesMixin).strokes;
+  switch (variableType) {
+    case "FILL":
+    case "STROKE":
+      {
+        let paints: readonly Paint[] | typeof figma.mixed | undefined;
 
-  // Paints in the Figma plugin could be figma.mixed, but in the Figma Cloud file figma.mixed
-  // isn't available.. so use isArray to make sure it isn't figma.mixed (which is a unique symbol type)
-  if (
-    paints &&
-    Array.isArray(paints) &&
-    paints.length > 0 &&
-    paints[0].type === "SOLID"
-  ) {
-    const paint = paints[0];
+        if (variableType === "FILL")
+          paints = (targetNode as MinimalFillsMixin).fills;
+        else if (variableType === "STROKE")
+          paints = (targetNode as MinimalStrokesMixin).strokes;
 
-    if (paint.visible === false) {
-      return { checkName, matchLevel: "Skip", suggestions: [] };
+        // Paints in the Figma plugin could be figma.mixed, but in the Figma Cloud file figma.mixed
+        // isn't available.. so use isArray to make sure it isn't figma.mixed (which is a unique symbol type)
+        if (
+          paints &&
+          Array.isArray(paints) &&
+          paints.length > 0 &&
+          paints[0].type === "SOLID"
+        ) {
+          const paint = paints[0];
+
+          if (paint.visible === false) {
+            return { checkName, matchLevel: "Skip", suggestions: [] };
+          }
+
+          // Figma plugin nodes use RBA + opacity, Figma Cloud file nodes use RGBA
+          const rgba = {
+            ...paint.color,
+            a: ((paint.color as RGBA).a || paint.opacity) ?? 1,
+          };
+
+          hexColor = rgbaToHex(rgba);
+          variables = hexColorToVariableMap[hexColor];
+        }
+      }
+      break;
+
+    case "ROUNDING":
+      // Only offer rounding suggestions for nodes that have a single, non-figma.mixed cornerRadius
+      // :TODO: Figure out if we want to expanded this to support figma.mixed radius values,
+      // which would mean needing to check:
+      // Plugin API: "bottomLeftRadius", "bottomRightRadius", "topLeftRadius", "topRightRadius" for the Plugin API
+      // REST API: "rectangleCornerRadii" array
+      const cornerRadius = (targetNode as CornerMixin).cornerRadius;
+      if (typeof cornerRadius === "number") {
+        variables = roundingToVariableMap[cornerRadius];
+      }
+      break;
+
+    default: {
+      // Make sure all variable types are handled
+      const _unreachable: never = variableType;
+      throw new Error(`Unhandled variableType: ${_unreachable}`);
     }
-
-    // Figma plugin nodes use RBA + opacity, Figma Cloud file nodes use RGBA
-    const rgba = {
-      ...paint.color,
-      a: ((paint.color as RGBA).a || paint.opacity) ?? 1,
-    };
-
-    const hexColor = rgbaToHex(rgba);
-    let variables = hexColorToVariableMap[hexColor];
+  }
 
   if (variables) {
     // Filter out variables that don't match the resolvedVariableModes for the node
@@ -67,7 +100,7 @@ export default function getVariableLookupMatches(
     // lookup map for faster filtering
     let currentNode = targetNode as SceneNode | BaseNode | null;
     while (currentNode && currentNode.type !== "DOCUMENT") {
-      const modes = currentNode.explicitVariableModes;
+      const modes = currentNode.explicitVariableModes ?? {};
 
       for (const [key, value] of Object.entries(modes)) {
         const collectionKey = key.match(/:(.+)\//)?.[1];
@@ -91,23 +124,26 @@ export default function getVariableLookupMatches(
       return v.modeId === modeToMatch;
     });
 
-      for (const v of variables) {
-        suggestions.push({
-          type: "Variable",
-          message: `Possible Gestalt ${checkName} match with name: ${v.name}`,
-          name: v.name,
-          hexColor,
-          description: v.description,
-          variableId: v.variableId,
-          variableKey: v.variableKey,
-          variableCollectionId: v.variableCollectionId,
-          variableCollectionKey: v.variableCollectionKey,
-          variableCollectionName: v.variableCollectionName,
-          modeId: v.modeId,
-          modeName: v.modeName,
-          scopes: v.scopes,
-        });
-      }
+    for (const v of variables) {
+      const suggestion: LintSuggestionVariable = {
+        type: "Variable",
+        message: `Possible Gestalt ${checkName} match with name: ${v.name}`,
+        name: v.name,
+        description: v.description,
+        variableId: v.variableId,
+        variableKey: v.variableKey,
+        variableCollectionId: v.variableCollectionId,
+        variableCollectionKey: v.variableCollectionKey,
+        variableCollectionName: v.variableCollectionName,
+        modeId: v.modeId,
+        modeName: v.modeName,
+        scopes: v.scopes,
+      };
+
+      // Only used for FILL and STROKE suggestions
+      if (hexColor) suggestion.hexColor = hexColor;
+
+      suggestions.push(suggestion);
     }
   }
 

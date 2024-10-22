@@ -15,9 +15,13 @@ import jp from "jsonpath";
 import checkFillStyleMatch from "./fillStyle";
 import checkStrokeStyleMatch from "./strokeStyle";
 import checkTextMatch from "./textStyle";
-import { HexColorToFigmaVariableMap } from "../utils/variables";
+import {
+  HexColorToFigmaVariableMap,
+  RoundingToFigmaVariableMap,
+} from "../utils/variables";
 import checkFillVariableMatch from "./fillVariable";
 import checkStrokeVariableMatch from "./strokeVariable";
+import checkRoundingVariableMatch from "./roundingVariable";
 
 /**
  * styleLookupMap - required for partial matches
@@ -26,6 +30,7 @@ export type LintCheckOptions = {
   hexStyleMap?: HexStyleMap;
   styleLookupMap?: StyleLookupMap;
   hexColorToVariableMap?: HexColorToFigmaVariableMap;
+  roundingToVariableMap?: RoundingToFigmaVariableMap;
 };
 /**
  * Run through all partial matches, and make exceptions depending on rules
@@ -50,7 +55,11 @@ export const runSimilarityChecks = (
     variables: FigmaLocalVariables,
     targetNode: BaseNode,
     opts?: LintCheckOptions
-  ) => LintCheck)[] = [checkFillVariableMatch, checkStrokeVariableMatch];
+  ) => LintCheck)[] = [
+    checkFillVariableMatch,
+    checkStrokeVariableMatch,
+    checkRoundingVariableMatch,
+  ];
 
   const results = [];
 
@@ -89,6 +98,50 @@ export const hasValidFillToMatch = (node: MinimalFillsMixin) => {
     !fills.some((f) => f.visible === false) && // No hidden fills
     !fills.some((f) => f.type === "IMAGE") // No image fills
   );
+};
+
+export const hasValidRoundingToMatch = (node: CornerMixin) => {
+  // Cloud files use rectangleCornerRadii when there are different values for corner radii
+  const { cornerRadius, rectangleCornerRadii } = node as any;
+
+  // If there is a cornerRadius property...
+  if (cornerRadius !== undefined) {
+    if (
+      typeof cornerRadius === "number" && // and it's a number
+      cornerRadius !== 0 // and it's not the default 0 value corner radius value
+    )
+      return true;
+
+    // and it's not a number... ala figma.mixed
+    if (typeof cornerRadius !== "number") {
+      const {
+        bottomLeftRadius,
+        bottomRightRadius,
+        topLeftRadius,
+        topRightRadius,
+      } = node as RectangleNode;
+
+      // ...and there are individual corner radii defined
+      return (
+        bottomLeftRadius !== undefined &&
+        bottomRightRadius !== undefined &&
+        topLeftRadius !== undefined &&
+        topRightRadius !== undefined
+      );
+    }
+  }
+
+  // Cloud files use rectangleCornerRadii when there are different values for
+  // corner radii for Rectangle (and Frame) nodes
+  // Other shapes, like Vector and Star, can only have a single value and use cornerRadius
+  else if (
+    rectangleCornerRadii !== undefined &&
+    Array.isArray(rectangleCornerRadii) &&
+    rectangleCornerRadii.length > 0
+  )
+    return true;
+
+  return false;
 };
 
 export const hasValidStrokeToMatch = (node: MinimalStrokesMixin) => {

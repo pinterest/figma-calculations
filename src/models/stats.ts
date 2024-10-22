@@ -45,12 +45,19 @@ export type AdoptionCalculationOptions = {
   includePartialFills?: boolean;
 };
 
+export type RadiusVariable =
+  | "bottomLeftRadius"
+  | "bottomRightRadius"
+  | "topLeftRadius"
+  | "topRightRadius";
+
 export type LintCheckName =
-  | "Text-Style"
   | "Fill-Style"
-  | "Stroke-Fill-Style"
   | "Fill-Variable"
-  | "Stroke-Fill-Variable";
+  | "Rounding-Variable"
+  | "Stroke-Fill-Style"
+  | "Stroke-Fill-Variable"
+  | "Text-Style";
 
 export type MatchLevel = "None" | "Partial" | "Full" | "Skip";
 
@@ -58,16 +65,16 @@ type LintSuggestionBase = {
   message: string;
   name: string;
   description?: string;
-  hexColor?: string;
 };
 
 export type LintSuggestionStyle = LintSuggestionBase & {
-  type: "Style"
+  type: "Style";
   styleKey: string;
 };
 
 export type LintSuggestionVariable = LintSuggestionBase & {
   type: "Variable";
+  hexColor?: string;
   variableId: string;
   variableKey: string;
   variableCollectionId: string;
@@ -76,7 +83,7 @@ export type LintSuggestionVariable = LintSuggestionBase & {
   modeId: string;
   modeName: string;
   scopes: VariableScope[];
-}
+};
 
 export type LintSuggestion = LintSuggestionStyle | LintSuggestionVariable;
 
@@ -104,7 +111,7 @@ export type LintCheckPercent = {
 };
 
 export type AggregateCountsCompliance = {
-  [key in "fills" | "strokes" | "text"]: {
+  [key in "fills" | "rounding" | "strokes" | "text"]: {
     attached: number;
     detached: number;
     none: number;

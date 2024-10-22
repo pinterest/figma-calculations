@@ -43,8 +43,10 @@ import {
 import { getFigmaPagesForTeam } from "./utils/teams";
 import {
   createHexColorToVariableMap,
+  createRoundingToVariableMap,
   getCollectionVariables,
   HexColorToFigmaVariableMap,
+  RoundingToFigmaVariableMap,
 } from "./utils/variables";
 import { FigmaAPIHelper } from "./webapi";
 
@@ -236,12 +238,14 @@ export class FigmaCalculator extends FigmaDocumentParser {
       styles?: FigmaTeamStyle[];
       styleBucket?: StyleBucket;
       colorVariableCollectionIds?: string[];
+      roundingVariableCollectionIds?: string[];
       variables?: FigmaLocalVariables;
       variableCollections?: FigmaLocalVariableCollections;
     } & LintCheckOptions
   ): LintCheck[] {
     let allStyles = opts?.styles || this.allStyles;
     let colorVariableCollectionIds = opts?.colorVariableCollectionIds || [];
+    let roundingVariableCollectionIds = opts?.roundingVariableCollectionIds || [];
     let variables = opts?.variables || this.localVariables;
     let variableCollections =
       opts?.variableCollections || this.localVariableCollections;
@@ -254,7 +258,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
         "No style bucket, or array of styles provided to generate lint results"
       );
 
-    // Just grab the variables from specific color variable collection(s)
+    // Grab the variables from specific color variable collection(s)
     let colorVariableIds: string[] = [];
     let hexColorToVariableMap: HexColorToFigmaVariableMap = {};
     if (
@@ -275,9 +279,31 @@ export class FigmaCalculator extends FigmaDocumentParser {
       );
     }
 
+    // Grab the variables from specific rounding variable collection(s)
+    let roundingVariableIds: string[] = [];
+    let roundingToVariableMap: RoundingToFigmaVariableMap = {};
+    if (
+      roundingVariableCollectionIds.length > 0 &&
+      variables &&
+      Object.keys(variables).length > 0 &&
+      variableCollections &&
+      Object.keys(variableCollections).length > 0
+    ) {
+      roundingVariableIds = getCollectionVariables(
+        roundingVariableCollectionIds,
+        variableCollections
+      );
+      roundingToVariableMap = createRoundingToVariableMap(
+        roundingVariableIds,
+        variables,
+        variableCollections
+      );
+    }
+
     return runSimilarityChecks(styleBucket, variables, node, {
       ...opts,
       hexColorToVariableMap,
+      roundingToVariableMap
     });
   }
 
@@ -402,6 +428,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
       components?: FigmaTeamComponent[];
       allStyles?: FigmaTeamStyle[];
       colorVariableCollectionIds?: string[];
+      roundingVariableCollectionIds?: string[];
       variables?: FigmaLocalVariables;
       variableCollections?: FigmaLocalVariableCollections;
     } & ProcessedNodeOptions
@@ -410,6 +437,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
       components,
       allStyles,
       colorVariableCollectionIds,
+      roundingVariableCollectionIds,
       variables,
       variableCollections,
     } = opts || {};
@@ -425,6 +453,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
         components || this.components,
         allStyles || this.allStyles,
         colorVariableCollectionIds || [],
+        roundingVariableCollectionIds || [],
         variables || this.localVariables,
         variableCollections || this.localVariableCollections,
         processedNodeOpts
@@ -432,6 +461,11 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
     const compliance: AggregateCountsCompliance = {
       fills: {
+        attached: 0,
+        detached: 0,
+        none: 0,
+      },
+      rounding: {
         attached: 0,
         detached: 0,
         none: 0,
@@ -466,6 +500,11 @@ export class FigmaCalculator extends FigmaDocumentParser {
           partial: 0,
           none: 0,
         },
+        rounding: {
+          full: 0,
+          partial: 0,
+          none: 0,
+        },
         strokes: {
           full: 0,
           partial: 0,
@@ -496,6 +535,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
               aggregates.checks[checkName]!.full += 1;
               if (checkName === "Fill-Style" || checkName === "Fill-Variable")
                 counters.fills.full++;
+              else if (checkName === "Rounding-Variable") counters.rounding.full++;
               else if (
                 checkName === "Stroke-Fill-Style" ||
                 checkName === "Stroke-Fill-Variable"
@@ -510,6 +550,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
               aggregates.checks[checkName]!.partial += 1;
               if (checkName === "Fill-Style" || checkName === "Fill-Variable")
                 counters.fills.partial++;
+              else if (checkName === "Rounding-Variable") counters.rounding.partial++;
               else if (
                 checkName === "Stroke-Fill-Style" ||
                 checkName === "Stroke-Fill-Variable"
@@ -524,6 +565,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
               aggregates.checks[checkName]!.none += 1;
               if (checkName === "Fill-Style" || checkName === "Fill-Variable")
                 counters.fills.none++;
+              else if (checkName === "Rounding-Variable") counters.rounding.none++;
               else if (
                 checkName === "Stroke-Fill-Style" ||
                 checkName === "Stroke-Fill-Variable"
@@ -554,6 +596,11 @@ export class FigmaCalculator extends FigmaDocumentParser {
       // Bitwise boolean AND to increment if both are true
       compliance.fills.none += counters.fills.none === 2 ? 1 : 0;
       compliance.strokes.none += counters.strokes.none === 2 ? 1 : 0;
+
+      // There isn't Rounding style support, so pass thru
+      compliance.rounding.attached += counters.rounding.full;
+      compliance.rounding.detached += counters.rounding.partial;
+      compliance.rounding.none += counters.rounding.none;
 
       // We don't have Text variable support (yet), so pass thru
       compliance.text.attached += counters.text.full;
