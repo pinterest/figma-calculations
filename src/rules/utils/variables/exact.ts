@@ -72,9 +72,20 @@ export const isExactVariableMatch = (
 
     case "ROUNDING":
       {
-        const matchingVariables: FigmaLocalVariable[] = [];
+        // Non-Rectangle nodes (e.g. Polygon, Star) can have a single cornerRadius bound variable
+        // NOTE: boundVariables.cornerRadius isn't documented or in the Figma typings currently, so using any
+        const variableSubscribedId = (targetNode as any).boundVariables
+          ?.cornerRadius?.id;
 
-        // Check all the corner radius bound variables, if they exist
+        if (variableSubscribedId) {
+          const variable = getVariableFromSubscribedId(variableSubscribedId);
+          if (variable && variable.scopes.includes("CORNER_RADIUS")) {
+            return variable;
+          }
+        }
+
+        // Otherwise, check all the corner radius bound variables, if they exist
+        const matchingVariables: FigmaLocalVariable[] = [];
         (
           [
             "bottomLeftRadius",
