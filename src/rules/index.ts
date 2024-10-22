@@ -101,12 +101,47 @@ export const hasValidFillToMatch = (node: MinimalFillsMixin) => {
 };
 
 export const hasValidRoundingToMatch = (node: CornerMixin) => {
-  const { cornerRadius } = node;
+  // Cloud files use rectangleCornerRadii when there are different values for corner radii
+  const { cornerRadius, rectangleCornerRadii } = node as any;
 
-  return (
-    cornerRadius !== undefined && // Must have a cornerRadius property
-    cornerRadius !== 0 // Skip default 0 value corner radius nodes
-  );
+  // If there is a cornerRadius property...
+  if (cornerRadius !== undefined) {
+    if (
+      typeof cornerRadius === "number" && // and it's a number
+      cornerRadius !== 0 // and it's not the default 0 value corner radius value
+    )
+      return true;
+
+    // and it's not a number... ala figma.mixed
+    if (typeof cornerRadius !== "number") {
+      const {
+        bottomLeftRadius,
+        bottomRightRadius,
+        topLeftRadius,
+        topRightRadius,
+      } = node as RectangleNode;
+
+      // ...and there are individual corner radii defined
+      return (
+        bottomLeftRadius !== undefined &&
+        bottomRightRadius !== undefined &&
+        topLeftRadius !== undefined &&
+        topRightRadius !== undefined
+      );
+    }
+  }
+
+  // Cloud files use rectangleCornerRadii when there are different values for
+  // corner radii for Rectangle (and Frame) nodes
+  // Other shapes, like Vector and Star, can only have a single value and use cornerRadius
+  else if (
+    rectangleCornerRadii !== undefined &&
+    Array.isArray(rectangleCornerRadii) &&
+    rectangleCornerRadii.length > 0
+  )
+    return true;
+
+  return false;
 };
 
 export const hasValidStrokeToMatch = (node: MinimalStrokesMixin) => {

@@ -60,7 +60,10 @@ export default function getVariableLookupMatches(
 
     case "ROUNDING":
       // Only offer rounding suggestions for nodes that have a single, non-figma.mixed cornerRadius
-      // :TODO: Figure out if we want to expanded this to support figma.mixed radius values
+      // :TODO: Figure out if we want to expanded this to support figma.mixed radius values,
+      // which would mean needing to check:
+      // Plugin API: "bottomLeftRadius", "bottomRightRadius", "topLeftRadius", "topRightRadius" for the Plugin API
+      // REST API: "rectangleCornerRadii" array
       const cornerRadius = (targetNode as CornerMixin).cornerRadius;
       if (typeof cornerRadius === "number") {
         variables = roundingToVariableMap[cornerRadius];
