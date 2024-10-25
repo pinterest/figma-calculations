@@ -328,7 +328,8 @@ export class FigmaCalculator extends FigmaDocumentParser {
       }
     });
 
-    // we do our filtering on the second run because the order of nodes is unknown, and a child may appear before the parent
+    // we do our filtering on the second run because the order of nodes is unknown,
+    // and a child may appear before the parent
     const nonHiddenNodes = nodes.filter((n) => {
       // if the node is hidden, then toss it out
       if (allHiddenNodes.includes(n.id)) {
@@ -341,6 +342,50 @@ export class FigmaCalculator extends FigmaDocumentParser {
       hiddenParentNodes,
       nonHiddenNodes,
       numHiddenLayers: allHiddenNodes.length,
+    };
+  }
+
+  static filterIgnoredComponentNodes(
+    nodes: BaseNode[],
+    ignoredComponentKeys: string[]
+  ): {
+    ignoredParentInstanceIds: string[];
+    nonIgnoredNodes: BaseNode[];
+    numIgnoredLayers: number;
+  } {
+    let allIgnoredNodes: string[] = [];
+    const ignoredParentInstanceIds: string[] = [];
+
+    nodes.forEach((node) => {
+      if (node.type === "INSTANCE" && !allIgnoredNodes.includes(node.id)) {
+        // REST API has componentId, Plugin API uses mainComponent.key
+        const componentKey =
+          (node as any).componentId || node.mainComponent?.key;
+
+        if (componentKey && ignoredComponentKeys.includes(componentKey)) {
+          ignoredParentInstanceIds.push(node.id);
+          // add all of the children as ignored nodes
+          const subNodes = FigmaDocumentParser.FindAll(node, () => true);
+          allIgnoredNodes.push(node.id);
+          subNodes.forEach((n) => allIgnoredNodes.push(n.id));
+        }
+      }
+    });
+
+    // we do our filtering on the second run because the order of nodes is unknown,
+    // and a child may appear before the parent
+    const nonIgnoredNodes = nodes.filter((n) => {
+      // if the node is ignored, then toss it out
+      if (allIgnoredNodes.includes(n.id)) {
+        return false;
+      }
+      return true;
+    });
+
+    return {
+      ignoredParentInstanceIds,
+      nonIgnoredNodes,
+      numIgnoredLayers: allIgnoredNodes.length,
     };
   }
 
@@ -441,23 +486,30 @@ export class FigmaCalculator extends FigmaDocumentParser {
       variables,
       variableCollections,
     } = opts || {};
+
     const processedNodeOpts: ProcessedNodeOptions = {
       onProcessNode: opts?.onProcessNode,
       hexStyleMap: opts?.hexStyleMap,
       styleLookupMap: opts?.styleLookupMap,
+      ignoredComponentKeys: opts?.ignoredComponentKeys,
     };
 
-    const { allHiddenNodes, libraryNodes, totalNodes, processedNodes } =
-      getProcessedNodes(
-        rootNode,
-        components || this.components,
-        allStyles || this.allStyles,
-        colorVariableCollectionIds || [],
-        roundingVariableCollectionIds || [],
-        variables || this.localVariables,
-        variableCollections || this.localVariableCollections,
-        processedNodeOpts
-      );
+    const {
+      allHiddenNodes,
+      allIgnoredNodes,
+      libraryNodes,
+      totalNodes,
+      processedNodes,
+    } = getProcessedNodes(
+      rootNode,
+      components || this.components,
+      allStyles || this.allStyles,
+      colorVariableCollectionIds || [],
+      roundingVariableCollectionIds || [],
+      variables || this.localVariables,
+      variableCollections || this.localVariableCollections,
+      processedNodeOpts
+    );
 
     const compliance: AggregateCountsCompliance = {
       fills: {
@@ -485,6 +537,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
     const aggregates: AggregateCounts = {
       totalNodes,
       hiddenNodes: allHiddenNodes,
+      ignoredNodes: allIgnoredNodes,
       libraryNodes,
       checks: {},
       compliance,
@@ -630,9 +683,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
     };
 
     for (const counts of aggregates) {
-      const { totalNodes, libraryNodes, hiddenNodes, checks } = counts;
+      const { totalNodes, libraryNodes, hiddenNodes, ignoredNodes, checks } =
+        counts;
 
-      allTotals.totalNodesOnPage += totalNodes - hiddenNodes;
+      allTotals.totalNodesOnPage += totalNodes - hiddenNodes - ignoredNodes;
       allTotals.totalNodesInLibrary += libraryNodes;
 
       if (checks["Text-Style"] && opts && opts.includeMatchingText) {

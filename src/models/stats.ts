@@ -121,6 +121,7 @@ export type AggregateCountsCompliance = {
 export type AggregateCounts = {
   totalNodes: number;
   hiddenNodes: number;
+  ignoredNodes: number;
   libraryNodes: number;
   checks: {
     [checkName in LintCheckName]?: {

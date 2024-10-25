@@ -24,6 +24,7 @@ import {
 
 export type ProcessedNodeOptions = {
   onProcessNode?: (node: ProcessedNode) => void;
+  ignoredComponentKeys?: string[];
 } & LintCheckOptions;
 
 // returns array of nodes that are in a hidden layer tree
@@ -105,13 +106,29 @@ export function getProcessedNodes(
   // find all the nodes in the document
   const allNodes = FigmaDocumentParser.FindAll(rootNode, (n) => true);
 
+  let nonHiddenNonIgnoredNodes: BaseNode[] = [];
+
   // toss any hidden nodes, get the counts
   const { nonHiddenNodes, numHiddenLayers } =
     FigmaCalculator.filterHiddenNodes(allNodes);
+    nonHiddenNonIgnoredNodes = nonHiddenNodes;
+
+  // toss any ignored component nodes
+  let nonIgnoredNodes: BaseNode[];
+  let numIgnoredLayers: number = 0;
+  if (opts?.ignoredComponentKeys?.length) {
+    ({ nonIgnoredNodes, numIgnoredLayers } =
+      FigmaCalculator.filterIgnoredComponentNodes(
+        nonHiddenNodes,
+        opts?.ignoredComponentKeys
+      ));
+
+      nonHiddenNonIgnoredNodes = nonIgnoredNodes;
+  }
 
   // toss any library nodes from the list
   const { nonLibraryNodes, numLibraryNodes, libraryNodes } =
-    FigmaCalculator.filterLibraryNodes(nonHiddenNodes, {
+    FigmaCalculator.filterLibraryNodes(nonHiddenNonIgnoredNodes, {
       components,
     });
 
@@ -168,6 +185,7 @@ export function getProcessedNodes(
     totalNodes: allNodes.length,
     libraryNodes: numLibraryNodes,
     allHiddenNodes: numHiddenLayers,
+    allIgnoredNodes: numIgnoredLayers,
   };
 }
 
