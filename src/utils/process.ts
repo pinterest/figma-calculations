@@ -46,51 +46,44 @@ export function getProcessedNodes(
   roundingVariableCollectionIds: string[],
   variables: FigmaLocalVariables,
   variableCollections: FigmaLocalVariableCollections,
-  opts?: ProcessedNodeOptions
+  opts: ProcessedNodeOptions
 ) {
   const styleBuckets = generateStyleBucket(allStyles);
   const styleLookupMap = generateStyleLookup(styleBuckets);
 
-  // Grab the variables from specific color variable collection(s)
-  let colorVariableIds: string[] = [];
-  let hexColorToVariableMap: HexColorToFigmaVariableMap = {};
-  if (
-    colorVariableCollectionIds.length > 0 &&
-    variables &&
-    Object.keys(variables).length > 0 &&
-    variableCollections &&
-    Object.keys(variableCollections).length > 0
-  ) {
-    colorVariableIds = getCollectionVariables(
-      colorVariableCollectionIds,
-      variableCollections
-    );
-    hexColorToVariableMap = createHexColorToVariableMap(
-      colorVariableIds,
-      variables,
-      variableCollections
-    );
-  }
+  let { hexColorToVariableMap, roundingToVariableMap } = opts;
 
-  // Grab the variables from specific rounding variable collection(s)
-  let roundingVariableIds: string[] = [];
-  let roundingToVariableMap: RoundingToFigmaVariableMap = {};
   if (
-    roundingVariableCollectionIds.length > 0 &&
     variables &&
     Object.keys(variables).length > 0 &&
     variableCollections &&
     Object.keys(variableCollections).length > 0
   ) {
-    roundingVariableIds = getCollectionVariables(
-      roundingVariableCollectionIds,
-      variableCollections
-    );
-    roundingToVariableMap = createRoundingToVariableMap(
-      roundingVariableIds,
-      variables,
-      variableCollections
-    );
+    // Create a map of hex colors to variables, if not passed
+    if (!hexColorToVariableMap && colorVariableCollectionIds.length > 0) {
+      const colorVariableIds = getCollectionVariables(
+        colorVariableCollectionIds,
+        variableCollections
+      );
+      hexColorToVariableMap = createHexColorToVariableMap(
+        colorVariableIds,
+        variables,
+        variableCollections
+      );
+    }
+
+    // Create a map of rounding values to variables, if not passed
+    if (!roundingToVariableMap && roundingVariableCollectionIds.length > 0) {
+      const roundingVariableIds = getCollectionVariables(
+        roundingVariableCollectionIds,
+        variableCollections
+      );
+      roundingToVariableMap = createRoundingToVariableMap(
+        roundingVariableIds,
+        variables,
+        variableCollections
+      );
+    }
   }
 
   const processedNodes: ProcessedNode[] = [];

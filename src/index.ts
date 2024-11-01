@@ -16,6 +16,7 @@ import {
   AggregateCountsCompliance,
   LintCheck,
   LintCheckPercent,
+  ProcessedNode,
   ProcessedNodeTree,
   ProcessedPage,
   ProcessedPageBreakdown,
@@ -45,8 +46,6 @@ import {
   createHexColorToVariableMap,
   createRoundingToVariableMap,
   getCollectionVariables,
-  HexColorToFigmaVariableMap,
-  RoundingToFigmaVariableMap,
 } from "./utils/variables";
 import { FigmaAPIHelper } from "./webapi";
 
@@ -234,76 +233,71 @@ export class FigmaCalculator extends FigmaDocumentParser {
    */
   getLintResults(
     node: BaseNode,
-    opts?: {
+    opts: {
       styles?: FigmaTeamStyle[];
       styleBucket?: StyleBucket;
       colorVariableCollectionIds?: string[];
       roundingVariableCollectionIds?: string[];
       variables?: FigmaLocalVariables;
       variableCollections?: FigmaLocalVariableCollections;
-    } & LintCheckOptions
+    } & LintCheckOptions = {}
   ): LintCheck[] {
-    let allStyles = opts?.styles || this.allStyles;
-    let colorVariableCollectionIds = opts?.colorVariableCollectionIds || [];
-    let roundingVariableCollectionIds = opts?.roundingVariableCollectionIds || [];
-    let variables = opts?.variables || this.localVariables;
-    let variableCollections =
-      opts?.variableCollections || this.localVariableCollections;
+    // Fallback to things we might already have loaded
+    const {
+      styles = this.allStyles,
+      variables = this.localVariables,
+      variableCollections = this.localVariableCollections,
+      colorVariableCollectionIds = [],
+      roundingVariableCollectionIds = [],
+    } = opts;
 
-    let styleBucket =
-      opts?.styleBucket || FigmaCalculator.generateStyleBucket(allStyles);
+    let { hexColorToVariableMap, roundingToVariableMap } = opts;
+
+    const styleBucket =
+      opts?.styleBucket || FigmaCalculator.generateStyleBucket(styles);
 
     if (!styleBucket)
       throw new Error(
         "No style bucket, or array of styles provided to generate lint results"
       );
 
-    // Grab the variables from specific color variable collection(s)
-    let colorVariableIds: string[] = [];
-    let hexColorToVariableMap: HexColorToFigmaVariableMap = {};
     if (
-      colorVariableCollectionIds.length > 0 &&
       variables &&
       Object.keys(variables).length > 0 &&
       variableCollections &&
       Object.keys(variableCollections).length > 0
     ) {
-      colorVariableIds = getCollectionVariables(
-        colorVariableCollectionIds,
-        variableCollections
-      );
-      hexColorToVariableMap = createHexColorToVariableMap(
-        colorVariableIds,
-        variables,
-        variableCollections
-      );
-    }
+      // Create a map of hex colors to variables, if not passed
+      if (!hexColorToVariableMap && colorVariableCollectionIds.length > 0) {
+        const colorVariableIds = getCollectionVariables(
+          colorVariableCollectionIds,
+          variableCollections
+        );
+        hexColorToVariableMap = createHexColorToVariableMap(
+          colorVariableIds,
+          variables,
+          variableCollections
+        );
+      }
 
-    // Grab the variables from specific rounding variable collection(s)
-    let roundingVariableIds: string[] = [];
-    let roundingToVariableMap: RoundingToFigmaVariableMap = {};
-    if (
-      roundingVariableCollectionIds.length > 0 &&
-      variables &&
-      Object.keys(variables).length > 0 &&
-      variableCollections &&
-      Object.keys(variableCollections).length > 0
-    ) {
-      roundingVariableIds = getCollectionVariables(
-        roundingVariableCollectionIds,
-        variableCollections
-      );
-      roundingToVariableMap = createRoundingToVariableMap(
-        roundingVariableIds,
-        variables,
-        variableCollections
-      );
+      // Create a map of rounding values to variables, if not passed
+      if (!roundingToVariableMap && roundingVariableCollectionIds.length > 0) {
+        const roundingVariableIds = getCollectionVariables(
+          roundingVariableCollectionIds,
+          variableCollections
+        );
+        roundingToVariableMap = createRoundingToVariableMap(
+          roundingVariableIds,
+          variables,
+          variableCollections
+        );
+      }
     }
 
     return runSimilarityChecks(styleBucket, variables, node, {
       ...opts,
       hexColorToVariableMap,
-      roundingToVariableMap
+      roundingToVariableMap,
     });
   }
 
@@ -469,30 +463,25 @@ export class FigmaCalculator extends FigmaDocumentParser {
    */
   processTree(
     rootNode: BaseNode,
-    opts?: {
+    opts: {
       components?: FigmaTeamComponent[];
       allStyles?: FigmaTeamStyle[];
       colorVariableCollectionIds?: string[];
       roundingVariableCollectionIds?: string[];
       variables?: FigmaLocalVariables;
       variableCollections?: FigmaLocalVariableCollections;
-    } & ProcessedNodeOptions
+    } & ProcessedNodeOptions = {}
   ): ProcessedNodeTree {
+    // Fallback to things we might already have loaded
     const {
-      components,
-      allStyles,
-      colorVariableCollectionIds,
-      roundingVariableCollectionIds,
-      variables,
-      variableCollections,
-    } = opts || {};
-
-    const processedNodeOpts: ProcessedNodeOptions = {
-      onProcessNode: opts?.onProcessNode,
-      hexStyleMap: opts?.hexStyleMap,
-      styleLookupMap: opts?.styleLookupMap,
-      ignoredComponentKeys: opts?.ignoredComponentKeys,
-    };
+      components = this.components,
+      allStyles = this.allStyles,
+      colorVariableCollectionIds = [],
+      roundingVariableCollectionIds = [],
+      variables = this.localVariables,
+      variableCollections = this.localVariableCollections,
+      ...processedNodeOpts // The rest, ala ProcessedNodeOptions
+    } = opts;
 
     const {
       allHiddenNodes,
@@ -502,15 +491,40 @@ export class FigmaCalculator extends FigmaDocumentParser {
       processedNodes,
     } = getProcessedNodes(
       rootNode,
-      components || this.components,
-      allStyles || this.allStyles,
-      colorVariableCollectionIds || [],
-      roundingVariableCollectionIds || [],
-      variables || this.localVariables,
-      variableCollections || this.localVariableCollections,
+      components,
+      allStyles,
+      colorVariableCollectionIds,
+      roundingVariableCollectionIds,
+      variables,
+      variableCollections,
       processedNodeOpts
     );
 
+    // Calculate aggregates and compliance
+    const aggregates = this.calculateAggregatesCompliance(
+      allHiddenNodes,
+      allIgnoredNodes,
+      libraryNodes,
+      totalNodes,
+      processedNodes
+    );
+
+    return {
+      parentNode: {
+        id: rootNode.id,
+        name: rootNode.name,
+      },
+      aggregateCounts: aggregates,
+    };
+  }
+
+  calculateAggregatesCompliance(
+    allHiddenNodes: number,
+    allIgnoredNodes: number,
+    libraryNodes: number,
+    totalNodes: number,
+    processedNodes: ProcessedNode[]
+  ): AggregateCounts {
     const compliance: AggregateCountsCompliance = {
       fills: {
         attached: 0,
@@ -588,7 +602,8 @@ export class FigmaCalculator extends FigmaDocumentParser {
               aggregates.checks[checkName]!.full += 1;
               if (checkName === "Fill-Style" || checkName === "Fill-Variable")
                 counters.fills.full++;
-              else if (checkName === "Rounding-Variable") counters.rounding.full++;
+              else if (checkName === "Rounding-Variable")
+                counters.rounding.full++;
               else if (
                 checkName === "Stroke-Fill-Style" ||
                 checkName === "Stroke-Fill-Variable"
@@ -603,7 +618,8 @@ export class FigmaCalculator extends FigmaDocumentParser {
               aggregates.checks[checkName]!.partial += 1;
               if (checkName === "Fill-Style" || checkName === "Fill-Variable")
                 counters.fills.partial++;
-              else if (checkName === "Rounding-Variable") counters.rounding.partial++;
+              else if (checkName === "Rounding-Variable")
+                counters.rounding.partial++;
               else if (
                 checkName === "Stroke-Fill-Style" ||
                 checkName === "Stroke-Fill-Variable"
@@ -618,7 +634,8 @@ export class FigmaCalculator extends FigmaDocumentParser {
               aggregates.checks[checkName]!.none += 1;
               if (checkName === "Fill-Style" || checkName === "Fill-Variable")
                 counters.fills.none++;
-              else if (checkName === "Rounding-Variable") counters.rounding.none++;
+              else if (checkName === "Rounding-Variable")
+                counters.rounding.none++;
               else if (
                 checkName === "Stroke-Fill-Style" ||
                 checkName === "Stroke-Fill-Variable"
@@ -663,13 +680,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
     aggregates.compliance = compliance;
 
-    return {
-      parentNode: {
-        id: rootNode.id,
-        name: rootNode.name,
-      },
-      aggregateCounts: aggregates,
-    };
+    return aggregates;
   }
 
   getAdoptionPercent(
