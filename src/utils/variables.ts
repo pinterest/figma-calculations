@@ -14,20 +14,21 @@ export type FigmaVariableMapVariable = {
   scopes: VariableScope[];
 };
 
-export type HexColorToFigmaVariableMap = Record<
-  string,
-  FigmaVariableMapVariable[]
->;
+export type HexColorToFigmaVariableMap = Record<string, FigmaVariableMapVariable[]>;
+export type RoundingToFigmaVariableMap = Record<number, FigmaVariableMapVariable[]>;
 
-export type RoundingToFigmaVariableMap = Record<
-  number,
-  FigmaVariableMapVariable[]
->;
+type VariableModeValue = {
+  variableId: string;
+  modeId: string;
+  value: VariableValue;
+};
+
+type VariableModeMap = Record<string, string>;
 
 // Allow strictNullChecks to properly detect null filtering using a filter()
 const nonNullable = <T>(value: T): value is NonNullable<T> => {
   return Boolean(value);
-}
+};
 
 // Helper function to convert a RGBA object to a CSS hex string in the form of #RRGGBBAA
 export const rgbaToHex = (rgba: RGBA): string => {
@@ -43,7 +44,7 @@ export const rgbaToHex = (rgba: RGBA): string => {
 // Given a list of variable collection ids, return a list of variable ids in those collections
 export const getCollectionVariables = (
   variableCollectionIds: string[],
-  variableCollections: FigmaLocalVariableCollections,
+  variableCollections: FigmaLocalVariableCollections
 ): string[] => {
   return variableCollectionIds
     .map((collectionId) => {
@@ -58,17 +59,12 @@ export const isVariableAlias = (value: VariableValue): value is VariableAlias =>
 };
 
 // Take a variable id and mode id and return the typed-checked value, recursively resolving any variable aliases
-function resolveVariableValue (variableId: string, modeId: string, variables: FigmaLocalVariables, type: "BOOLEAN"): boolean | undefined;
-function resolveVariableValue (variableId: string, modeId: string, variables: FigmaLocalVariables, type: "FLOAT"): number | undefined;
-function resolveVariableValue (variableId: string, modeId: string, variables: FigmaLocalVariables, type: "STRING"): string | undefined;
-function resolveVariableValue (variableId: string, modeId: string, variables: FigmaLocalVariables, type: "COLOR"): RGBA | undefined;
-// Unhandled variable types
-function resolveVariableValue (variableId: string, modeId: string, variables: FigmaLocalVariables, type: "VARIABLE_ALIAS"): undefined;
-function resolveVariableValue (variableId: string, modeId: string, variables: FigmaLocalVariables, type: "EXPRESSION"): undefined;
-// Catch-all to handle typescript error when doing recursive calls to overloaded functions
-function resolveVariableValue (variableId: string, modeId: string, variables: FigmaLocalVariables, type: VariableDataType): VariableValue | undefined;
-// Implementation...
-function resolveVariableValue (variableId: string, modeId: string, variables: FigmaLocalVariables, type: VariableDataType): VariableValue | undefined {
+function resolveVariableValue(
+  variableId: string,
+  modeId: string,
+  variables: FigmaLocalVariables,
+  type: VariableDataType
+): VariableValue | undefined {
   const variable = variables[variableId];
   if (!variable) {
     console.log("WARNING: No value found for the matching mode:", variableId, modeId);
@@ -121,70 +117,114 @@ function resolveVariableValue (variableId: string, modeId: string, variables: Fi
 
   console.log("ERROR: The variable's value is not a VariableAlias or validated type:", type);
   return undefined;
-};
+}
 
-// #region Color Variables
-
-// Get the hex values for all of a variable's modes
-// ex: { variableId: "123", modeId: "456", hexValue: "#FFFFFF" }
-const getModeHexValues = (
-  variableId: string,
-  variables: FigmaLocalVariables,
-): Array<{
-  variableId: string;
-  modeId: string;
-  hexValue: string | undefined;
-}> | undefined => {
-  const variable = variables[variableId];
-
-  // Only include "COLOR" type variables that are not hidden from publishing and are not remote
-  if (!variable || variable.resolvedType !== "COLOR" || variable.hiddenFromPublishing || variable.remote) return undefined;
-
-  return Object.keys(variable.valuesByMode).map((modeId) => {
-    const color = resolveVariableValue(variableId, modeId, variables, "COLOR");
-    const hexValue = color ? rgbaToHex(color) : undefined;
-    return { variableId, modeId, hexValue };
-  });
-};
-
-// Group variables by their hex value
-export const createHexColorToVariableMap = (
-  colorVariableIds: string[],
-  variables: FigmaLocalVariables,
-  variableCollections: FigmaLocalVariableCollections,
-): HexColorToFigmaVariableMap => {
-  const variableHexValues = colorVariableIds
-    .map((variableId) => getModeHexValues(variableId, variables))
-    .filter(nonNullable)
-    .flat();
-
-  // Create a lookup map of mode ids to their names
-  const variableModeNameMap = Object.values(variableCollections).reduce<Record<string, string>>((acc, { modes }) => {
+// Create a lookup map of mode ids to their names
+const createVariableModeNameMap = (variableCollections: FigmaLocalVariableCollections): VariableModeMap => {
+  return Object.values(variableCollections).reduce<Record<string, string>>((acc, { modes }) => {
     modes.forEach(({ modeId, name }) => {
       acc[modeId] = name;
     });
     return acc;
   }, {});
+};
 
-  return variableHexValues.reduce<HexColorToFigmaVariableMap>((acc, { hexValue, variableId, modeId }) => {
-    if (hexValue) {
-      if (!acc[hexValue]) acc[hexValue] = [];
+// Given a variable id and mode id, create a FigmaVariableMapVariable object
+const createVariableMapVariable = (
+  variableId: string,
+  modeId: string,
+  variableModeNameMap: VariableModeMap,
+  variables: FigmaLocalVariables,
+  variableCollections: FigmaLocalVariableCollections
+): FigmaVariableMapVariable | undefined => {
+  const variable = variables[variableId];
+  if (!variable) return undefined;
 
-      const { name, description, key, variableCollectionId } = variables[variableId];
-      acc[hexValue].push({
-        name,
-        description,
-        variableId,
-        variableKey: key,
-        variableCollectionId,
-        variableCollectionKey: variableCollections[variableCollectionId].key,
-        variableCollectionName: variableCollections[variableCollectionId].name,
-        variableCollectionDefaultModeId: variableCollections[variableCollectionId].defaultModeId,
-        modeId,
-        modeName: variableModeNameMap[modeId],
-        scopes: variables[variableId].scopes,
-      });
-    }
+  const { name, description, key, scopes, variableCollectionId } = variable;
+
+  const variableCollection = variableCollections[variableCollectionId];
+  if (!variableCollection) return undefined;
+
+  const {
+    key: variableCollectionKey,
+    name: variableCollectionName,
+    defaultModeId: variableCollectionDefaultModeId,
+  } = variableCollection;
+
+  const modeName = variableModeNameMap[modeId];
+  if (!modeName) return undefined;
+
+  return {
+    name,
+    description,
+    variableId,
+    variableKey: key,
+    variableCollectionId,
+    variableCollectionKey,
+    variableCollectionName,
+    variableCollectionDefaultModeId,
+    modeId,
+    modeName,
+    scopes,
+  };
+};
+
+// Resolve the values for all of a variable's modes
+// ex: { variableId: "123", modeId: "456", value: 16 }
+const getModeValues = (
+  variableId: string,
+  variables: FigmaLocalVariables,
+  variableType: VariableDataType
+): VariableModeValue[] | undefined => {
+  const variable = variables[variableId];
+
+  // Only include variables of variableType, that are not hidden from publishing, and are not remote
+  if (!variable || variable.resolvedType !== variableType || variable.hiddenFromPublishing || variable.remote)
+    return undefined;
+
+  return Object.keys(variable.valuesByMode)
+    .map((modeId) => {
+      const value = resolveVariableValue(variableId, modeId, variables, variableType);
+
+      return value !== undefined ? { variableId, modeId, value } : undefined;
+    })
+    .filter(nonNullable);
+};
+
+// #region Color Variables
+
+// Group variables by their hex value
+export const createHexColorToVariableMap = (
+  colorVariableIds: string[],
+  variables: FigmaLocalVariables,
+  variableCollections: FigmaLocalVariableCollections
+): HexColorToFigmaVariableMap => {
+  const variableHexValues = colorVariableIds
+    .map((variableId) => getModeValues(variableId, variables, "COLOR"))
+    .filter(nonNullable)
+    .flat()
+    .map(({ variableId, modeId, value }) => ({
+      variableId,
+      modeId,
+      value: rgbaToHex(value as RGBA), // Convert the color value to a hex string
+    }));
+
+  // Create a lookup map of mode ids to their names
+  const variableModeNameMap = createVariableModeNameMap(variableCollections);
+
+  return variableHexValues.reduce<HexColorToFigmaVariableMap>((acc, { variableId, modeId, value }) => {
+    value = value as string; // Value is a hex string
+    if (!acc[value]) acc[value] = [];
+
+    const variableMapVariable = createVariableMapVariable(
+      variableId,
+      modeId,
+      variableModeNameMap,
+      variables,
+      variableCollections
+    );
+
+    if (variableMapVariable) acc[value].push(variableMapVariable);
 
     return acc;
   }, {});
@@ -193,66 +233,33 @@ export const createHexColorToVariableMap = (
 
 // #region: Rounding Variables
 
-// Get the rounding/radius values for all of a variable's modes
-// ex: { variableId: "123", modeId: "456", value: 16 }
-const getModeRoundingValues = (
-  variableId: string,
-  variables: FigmaLocalVariables,
-): Array<{
-  variableId: string;
-  modeId: string;
-  value: number | undefined;
-}> | undefined => {
-  const variable = variables[variableId];
-
-  // Only include "FLOAT" type variables that are not hidden from publishing and are not remote
-  if (!variable || variable.resolvedType !== "FLOAT" || variable.hiddenFromPublishing || variable.remote) return undefined;
-
-  return Object.keys(variable.valuesByMode).map((modeId) => {
-    const value = resolveVariableValue(variableId, modeId, variables, "FLOAT");
-    return { variableId, modeId, value };
-  });
-};
-
 // Group rounding variables by their radius value
 export const createRoundingToVariableMap = (
   roundingVariableIds: string[],
   variables: FigmaLocalVariables,
-  variableCollections: FigmaLocalVariableCollections,
+  variableCollections: FigmaLocalVariableCollections
 ): RoundingToFigmaVariableMap => {
   const variableRoundingValues = roundingVariableIds
-    .map((variableId) => getModeRoundingValues(variableId, variables))
+    .map((variableId) => getModeValues(variableId, variables, "FLOAT"))
     .filter(nonNullable)
     .flat();
 
   // Create a lookup map of mode ids to their names
-  const variableModeNameMap = Object.values(variableCollections).reduce<Record<string, string>>((acc, { modes }) => {
-    modes.forEach(({ modeId, name }) => {
-      acc[modeId] = name;
-    });
-    return acc;
-  }, {});
+  const variableModeNameMap = createVariableModeNameMap(variableCollections);
 
-  return variableRoundingValues.reduce<RoundingToFigmaVariableMap>((acc, { value, variableId, modeId }) => {
-    // if value exists
-    if (value !== undefined) {
-      if (!acc[value]) acc[value] = [];
+  return variableRoundingValues.reduce<RoundingToFigmaVariableMap>((acc, { variableId, modeId, value }) => {
+    value = value as number; // Rounding values are numbers
+    if (!acc[value]) acc[value] = [];
 
-      const { name, description, key, variableCollectionId } = variables[variableId];
-      acc[value].push({
-        name,
-        description,
-        variableId,
-        variableKey: key,
-        variableCollectionId,
-        variableCollectionKey: variableCollections[variableCollectionId].key,
-        variableCollectionName: variableCollections[variableCollectionId].name,
-        variableCollectionDefaultModeId: variableCollections[variableCollectionId].defaultModeId,
-        modeId,
-        modeName: variableModeNameMap[modeId],
-        scopes: variables[variableId].scopes,
-      });
-    }
+    const variableMapVariable = createVariableMapVariable(
+      variableId,
+      modeId,
+      variableModeNameMap,
+      variables,
+      variableCollections
+    );
+
+    if (variableMapVariable) acc[value].push(variableMapVariable);
 
     return acc;
   }, {});
