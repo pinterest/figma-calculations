@@ -1,0 +1,106 @@
+{
+  "VariableID:7410:248": {
+    "id": "VariableID:7410:248",
+    "name": "base/color/grayscale/0",
+    "remote": false,
+    "key": "433df2cc27341b6b7ec4f40c5f66ffa29d6b08cf",
+    "variableCollectionId": "VariableCollectionId:4995:2",
+    "resolvedType": "COLOR",
+    "description": "",
+    "hiddenFromPublishing": false,
+    "valuesByMode": {
+      "7410:0": {
+        "r": 1,
+        "g": 1,
+        "b": 1,
+        "a": 1
+      }
+    },
+    "scopes": [
+      "ALL_SCOPES"
+    ],
+    "codeSyntax": {}
+  },
+  "VariableID:7410:259": {
+    "id": "VariableID:7410:259",
+    "name": "base/color/grayscale/500",
+    "remote": false,
+    "key": "d2dea6c1a49faf51388ffa151f710055d5c2f4ae",
+    "variableCollectionId": "VariableCollectionId:4995:2",
+    "resolvedType": "COLOR",
+    "description": "",
+    "hiddenFromPublishing": false,
+    "valuesByMode": {
+      "7410:0": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 1
+      }
+    },
+    "scopes": [
+      "ALL_SCOPES"
+    ],
+    "codeSyntax": {}
+  },
+  "VariableID:265:2997": {
+    "id": "VariableID:265:2997",
+    "name": "sema/color/background/default",
+    "remote": false,
+    "key": "b5210392296e696d0a8bb2f92aea2b1c3f4bfdb6",
+    "variableCollectionId": "VariableCollectionId:265:2989",
+    "resolvedType": "COLOR",
+    "description": "",
+    "hiddenFromPublishing": false,
+    "valuesByMode": {
+      "265:0": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:7410:248"
+      },
+      "265:1": {
+        "type": "VARIABLE_ALIAS",
+        "id": "VariableID:7410:259"
+      }
+    },
+    "scopes": [
+      "FRAME_FILL",
+      "SHAPE_FILL"
+    ],
+    "codeSyntax": {}
+  },
+  "VariableID:701:7996": {
+    "id": "VariableID:701:7996",
+    "name": "sema/rounding/100",
+    "remote": false,
+    "key": "96b13ef45e11ceadb81ba0281b9e876c2b14d3dd",
+    "variableCollectionId": "VariableCollectionId:701:7994",
+    "resolvedType": "FLOAT",
+    "description": "",
+    "hiddenFromPublishing": false,
+    "valuesByMode": {
+      "7410:2": 4
+    },
+    "scopes": [
+      "CORNER_RADIUS"
+    ],
+    "codeSyntax": {}
+  },
+  "VariableID:7410:308": {
+    "id": "VariableID:7410:308",
+    "name": "sema/space/25",
+    "remote": false,
+    "key": "514b51e50626e605fc9d07668d22492e53c671dd",
+    "variableCollectionId": "VariableCollectionId:733:939",
+    "resolvedType": "FLOAT",
+    "description": "",
+    "hiddenFromPublishing": false,
+    "valuesByMode": {
+      "7410:3": 1
+    },
+    "scopes": [
+      "WIDTH_HEIGHT",
+      "GAP"
+    ],
+    "codeSyntax": {}
+  }
+}

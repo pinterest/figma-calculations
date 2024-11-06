@@ -59,7 +59,7 @@ export const isVariableAlias = (value: VariableValue): value is VariableAlias =>
 };
 
 // Take a variable id and mode id and return the typed-checked value, recursively resolving any variable aliases
-function resolveVariableValue(
+export function resolveVariableValue(
   variableId: string,
   modeId: string,
   variables: FigmaLocalVariables,
@@ -120,7 +120,8 @@ function resolveVariableValue(
 }
 
 // Create a lookup map of mode ids to their names
-const createVariableModeNameMap = (variableCollections: FigmaLocalVariableCollections): VariableModeMap => {
+// Note: exporting for testing only
+export const createVariableModeNameMap = (variableCollections: FigmaLocalVariableCollections): VariableModeMap => {
   return Object.values(variableCollections).reduce<Record<string, string>>((acc, { modes }) => {
     modes.forEach(({ modeId, name }) => {
       acc[modeId] = name;
@@ -130,7 +131,8 @@ const createVariableModeNameMap = (variableCollections: FigmaLocalVariableCollec
 };
 
 // Given a variable id and mode id, create a FigmaVariableMapVariable object
-const createVariableMapVariable = (
+// Note: exported for testing only
+export const createVariableMapVariable = (
   variableId: string,
   modeId: string,
   variableModeNameMap: VariableModeMap,
@@ -171,7 +173,8 @@ const createVariableMapVariable = (
 
 // Resolve the values for all of a variable's modes
 // ex: { variableId: "123", modeId: "456", value: 16 }
-const getModeValues = (
+// Note: exported for testing only
+export const getModeValues = (
   variableId: string,
   variables: FigmaLocalVariables,
   variableType: VariableDataType
