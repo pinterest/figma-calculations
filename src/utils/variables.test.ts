@@ -1,6 +1,7 @@
 import {
   createHexColorToVariableMap,
   createRoundingToVariableMap,
+  createSpacingToVariableMap,
   createVariableMapVariable,
   createVariableModeNameMap,
   getCollectionVariables,
@@ -226,6 +227,30 @@ describe("createHexColorToVariableMap", () => {
           modeId: "7410:2",
           modeName: "Default",
           scopes: ["CORNER_RADIUS"],
+        },
+      ],
+    });
+  });
+
+  test("Creates a map of spacing values to variables", () => {
+    const spacingVariableIds = getCollectionVariables(["VariableCollectionId:733:939"], variableCollections);
+    const map = createSpacingToVariableMap(spacingVariableIds, variables, variableCollections);
+
+    expect(map).toBeDefined();
+    expect(map).toEqual({
+      "1": [
+        {
+          name: "sema/space/25",
+          description: "",
+          variableId: "VariableID:7410:308",
+          variableKey: "514b51e50626e605fc9d07668d22492e53c671dd",
+          variableCollectionId: "VariableCollectionId:733:939",
+          variableCollectionKey: "4e5f6934a1d3c0f5a8c815351342ff630b0bc069",
+          variableCollectionName: "Spacing",
+          variableCollectionDefaultModeId: "7410:3",
+          modeId: "7410:3",
+          modeName: "Default",
+          scopes: ["WIDTH_HEIGHT", "GAP"],
         },
       ],
     });

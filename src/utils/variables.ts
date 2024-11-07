@@ -269,3 +269,39 @@ export const createRoundingToVariableMap = (
 };
 
 // #endregion: Rounding Variables
+
+// #region: Spacing Variables
+
+// Group spacing variables by their value
+export const createSpacingToVariableMap = (
+  spacingVariableIds: string[],
+  variables: FigmaLocalVariables,
+  variableCollections: FigmaLocalVariableCollections
+): RoundingToFigmaVariableMap => {
+  const variableSpacingValues = spacingVariableIds
+    .map((variableId) => getModeValues(variableId, variables, "FLOAT"))
+    .filter(nonNullable)
+    .flat();
+
+  // Create a lookup map of mode ids to their names
+  const variableModeNameMap = createVariableModeNameMap(variableCollections);
+
+  return variableSpacingValues.reduce<RoundingToFigmaVariableMap>((acc, { variableId, modeId, value }) => {
+    value = value as number; // Spacing values are numbers
+    if (!acc[value]) acc[value] = [];
+
+    const variableMapVariable = createVariableMapVariable(
+      variableId,
+      modeId,
+      variableModeNameMap,
+      variables,
+      variableCollections
+    );
+
+    if (variableMapVariable) acc[value].push(variableMapVariable);
+
+    return acc;
+  }, {});
+};
+
+// #endregion: Spacing Variables
