@@ -3,41 +3,33 @@ import { LintCheck, LintCheckName } from "../models/stats";
 
 import {
   LintCheckOptions,
-  hasValidFillToMatch,
+  hasValidSpacingToMatch,
   isNodeOfTypeAndVisible,
 } from ".";
 import { isExactVariableMatch } from "./utils/variables/exact";
 import getVariableLookupMatches from "./utils/variables/lookup";
 
-export default function checkFillVariableMatch(
+export default function checkSpacingVariableMatch(
   variables: FigmaLocalVariables,
   targetNode: BaseNode,
   opts?: LintCheckOptions
 ): LintCheck {
-  const checkName: LintCheckName = "Fill-Variable";
+  const checkName: LintCheckName = "Spacing-Variable";
 
-  // Check if correct Node Type
-  // REST API uses "REGULAR_POLYGON" but Figma uses "POLYGON"
+  // Check if correct Node Type. Only Frames and Instances can have spacing
   if (
     !isNodeOfTypeAndVisible(
-      ["ELLIPSE", "INSTANCE", "POLYGON", "REGULAR_POLYGON", "RECTANGLE", "STAR", "TEXT", "VECTOR"],
+      ["FRAME", "INSTANCE"],
       targetNode
     )
   )
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
-  // Don't do variable processing if a fill style is in-use
-  if (
-    (targetNode as MinimalFillsMixin).fillStyleId ||
-    (targetNode as any).styles?.fill
-  )
-    return { checkName, matchLevel: "Skip", suggestions: [] };
-
-  if (!hasValidFillToMatch(targetNode as MinimalFillsMixin))
+  if (!hasValidSpacingToMatch(targetNode as BaseFrameMixin))
     return { checkName, matchLevel: "Skip", suggestions: [] };
 
   // check if variable is exact match
-  const exactMatch = isExactVariableMatch("FILL", variables, targetNode);
+  const exactMatch = isExactVariableMatch("SPACING", variables, targetNode);
 
   if (exactMatch)
     return {
@@ -48,13 +40,13 @@ export default function checkFillVariableMatch(
     };
 
   // Variable matching
-  if (opts?.hexColorToVariableMap) {
+  if (opts?.spacingToVariableMap) {
     const { matchLevel, suggestions } = getVariableLookupMatches(
       checkName,
-      opts.hexColorToVariableMap,
+      {}, // opts.hexColorToVariableMap not used in this check
       {}, // opts.roundingToVariableMap not used in this check
-      {}, // opts.spacingToVariableMap not used in this check
-      "FILL",
+      opts.spacingToVariableMap,
+      "SPACING",
       targetNode
     );
 

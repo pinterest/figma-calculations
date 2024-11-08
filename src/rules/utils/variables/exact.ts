@@ -1,8 +1,8 @@
 import { FigmaLocalVariable, FigmaLocalVariables } from "../../../models/figma";
-import { RadiusVariable } from "../../../models/stats";
+import { RadiusVariable, SpacingVariable } from "../../../models/stats";
 
 export const isExactVariableMatch = (
-  variableType: "FILL" | "ROUNDING" | "STROKE",
+  variableType: "FILL" | "ROUNDING" | "SPACING" | "STROKE",
   variables: FigmaLocalVariables,
   targetNode: BaseNode
 ): FigmaLocalVariable | undefined => {
@@ -106,9 +106,39 @@ export const isExactVariableMatch = (
           }
         });
 
-        // If they all match, return the first one
+        // If they all match, return the first one I guess?
         // :TODO: Do callers use this returned variable key?
         if (matchingVariables.length === 4) return matchingVariables[0];
+      }
+      break;
+
+    case "SPACING":
+      {
+        const matchingVariables: FigmaLocalVariable[] = [];
+        (
+          [
+            "counterAxisSpacing",
+            "itemSpacing",
+            "paddingBottom",
+            "paddingLeft",
+            "paddingRight",
+            "paddingTop",
+          ] as SpacingVariable[]
+        ).forEach((spacing) => {
+          const variableSubscribedId = (targetNode as FrameNode | InstanceNode).boundVariables?.[spacing]?.id;
+
+          if (variableSubscribedId) {
+            const variable = getVariableFromSubscribedId(variableSubscribedId);
+
+            if (variable && variable.scopes.includes("GAP")) {
+              matchingVariables.push(variable);
+            }
+          }
+        });
+
+        // If they all match, return the first one I guess?
+        // :TODO: Do callers use this returned variable key?
+        if (matchingVariables.length === 6) return matchingVariables[0];
       }
       break;
 

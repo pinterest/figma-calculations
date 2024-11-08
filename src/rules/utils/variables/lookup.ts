@@ -8,13 +8,15 @@ import {
   HexColorToFigmaVariableMap,
   rgbaToHex,
   RoundingToFigmaVariableMap,
+  SpacingToFigmaVariableMap,
 } from "../../../utils/variables";
 
 export default function getVariableLookupMatches(
   checkName: LintCheckName,
   hexColorToVariableMap: HexColorToFigmaVariableMap,
   roundingToVariableMap: RoundingToFigmaVariableMap,
-  variableType: "FILL" | "ROUNDING" | "STROKE",
+  spacingToVariableMap: SpacingToFigmaVariableMap,
+  variableType: "FILL" | "ROUNDING" | "SPACING" | "STROKE",
   targetNode: BaseNode
 ): LintCheck {
   const suggestions: LintSuggestionVariable[] = [];
@@ -27,19 +29,12 @@ export default function getVariableLookupMatches(
       {
         let paints: readonly Paint[] | typeof figma.mixed | undefined;
 
-        if (variableType === "FILL")
-          paints = (targetNode as MinimalFillsMixin).fills;
-        else if (variableType === "STROKE")
-          paints = (targetNode as MinimalStrokesMixin).strokes;
+        if (variableType === "FILL") paints = (targetNode as MinimalFillsMixin).fills;
+        else if (variableType === "STROKE") paints = (targetNode as MinimalStrokesMixin).strokes;
 
         // Paints in the Figma plugin could be figma.mixed, but in the Figma Cloud file figma.mixed
         // isn't available.. so use isArray to make sure it isn't figma.mixed (which is a unique symbol type)
-        if (
-          paints &&
-          Array.isArray(paints) &&
-          paints.length > 0 &&
-          paints[0].type === "SOLID"
-        ) {
+        if (paints && Array.isArray(paints) && paints.length > 0 && paints[0].type === "SOLID") {
           const paint = paints[0];
 
           if (paint.visible === false) {
@@ -61,13 +56,20 @@ export default function getVariableLookupMatches(
     case "ROUNDING":
       // Only offer rounding suggestions for nodes that have a single, non-figma.mixed cornerRadius
       // :TODO: Figure out if we want to expanded this to support figma.mixed radius values,
-      // which would mean needing to check:
-      // Plugin API: "bottomLeftRadius", "bottomRightRadius", "topLeftRadius", "topRightRadius" for the Plugin API
-      // REST API: "rectangleCornerRadii" array
+      // which would mean needing to separately check and return...
+      //
+      // Plugin API: "bottomLeftRadius", "bottomRightRadius", "topLeftRadius", "topRightRadius"
+      // REST API: the four values in the "rectangleCornerRadii" array
+      //
       const cornerRadius = (targetNode as CornerMixin).cornerRadius;
       if (typeof cornerRadius === "number") {
         variables = roundingToVariableMap[cornerRadius];
       }
+      break;
+
+    case "SPACING":
+      // :TODO: Figure out if we want to support spacing suggestions, which would mean needing to separately check and return:
+      // "itemSpacing", "counterAxisSpacing", "paddingBottom", "paddingLeft", "paddingRight", "paddingTop"
       break;
 
     default: {

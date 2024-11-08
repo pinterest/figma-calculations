@@ -16,6 +16,7 @@ export type FigmaVariableMapVariable = {
 
 export type HexColorToFigmaVariableMap = Record<string, FigmaVariableMapVariable[]>;
 export type RoundingToFigmaVariableMap = Record<number, FigmaVariableMapVariable[]>;
+export type SpacingToFigmaVariableMap = Record<number, FigmaVariableMapVariable[]>;
 
 type VariableModeValue = {
   variableId: string;

@@ -45,6 +45,7 @@ import { getFigmaPagesForTeam } from "./utils/teams";
 import {
   createHexColorToVariableMap,
   createRoundingToVariableMap,
+  createSpacingToVariableMap,
   getCollectionVariables,
 } from "./utils/variables";
 import { FigmaAPIHelper } from "./webapi";
@@ -238,6 +239,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
       styleBucket?: StyleBucket;
       colorVariableCollectionIds?: string[];
       roundingVariableCollectionIds?: string[];
+      spacingVariableCollectionIds?: string[];
       variables?: FigmaLocalVariables;
       variableCollections?: FigmaLocalVariableCollections;
     } & LintCheckOptions = {}
@@ -249,9 +251,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
       variableCollections = this.localVariableCollections,
       colorVariableCollectionIds = [],
       roundingVariableCollectionIds = [],
+      spacingVariableCollectionIds = [],
     } = opts;
 
-    let { hexColorToVariableMap, roundingToVariableMap } = opts;
+    let { hexColorToVariableMap, roundingToVariableMap, spacingToVariableMap } = opts;
 
     const styleBucket =
       opts?.styleBucket || FigmaCalculator.generateStyleBucket(styles);
@@ -292,12 +295,26 @@ export class FigmaCalculator extends FigmaDocumentParser {
           variableCollections
         );
       }
+
+      // Create a map of spacing values to variables, if not passed
+      if (!spacingToVariableMap && spacingVariableCollectionIds.length > 0) {
+        const spacingVariableIds = getCollectionVariables(
+          spacingVariableCollectionIds,
+          variableCollections
+        );
+        spacingToVariableMap = createSpacingToVariableMap(
+          spacingVariableIds,
+          variables,
+          variableCollections
+        );
+      }
     }
 
     return runSimilarityChecks(styleBucket, variables, node, {
       ...opts,
       hexColorToVariableMap,
       roundingToVariableMap,
+      spacingToVariableMap,
     });
   }
 
@@ -468,6 +485,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
       allStyles?: FigmaTeamStyle[];
       colorVariableCollectionIds?: string[];
       roundingVariableCollectionIds?: string[];
+      spacingVariableCollectionIds?: string[];
       variables?: FigmaLocalVariables;
       variableCollections?: FigmaLocalVariableCollections;
     } & ProcessedNodeOptions = {}
@@ -478,6 +496,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
       allStyles = this.allStyles,
       colorVariableCollectionIds = [],
       roundingVariableCollectionIds = [],
+      spacingVariableCollectionIds = [],
       variables = this.localVariables,
       variableCollections = this.localVariableCollections,
       ...processedNodeOpts // The rest, ala ProcessedNodeOptions
@@ -495,6 +514,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
       allStyles,
       colorVariableCollectionIds,
       roundingVariableCollectionIds,
+      spacingVariableCollectionIds,
       variables,
       variableCollections,
       processedNodeOpts
@@ -536,6 +556,11 @@ export class FigmaCalculator extends FigmaDocumentParser {
         detached: 0,
         none: 0,
       },
+      spacing: {
+        attached: 0,
+        detached: 0,
+        none: 0,
+      },
       strokes: {
         attached: 0,
         detached: 0,
@@ -572,6 +597,11 @@ export class FigmaCalculator extends FigmaDocumentParser {
           partial: 0,
           none: 0,
         },
+        spacing: {
+          full: 0,
+          partial: 0,
+          none: 0,
+        },
         strokes: {
           full: 0,
           partial: 0,
@@ -604,6 +634,8 @@ export class FigmaCalculator extends FigmaDocumentParser {
                 counters.fills.full++;
               else if (checkName === "Rounding-Variable")
                 counters.rounding.full++;
+              else if (checkName === "Spacing-Variable")
+                counters.spacing.full++;
               else if (
                 checkName === "Stroke-Fill-Style" ||
                 checkName === "Stroke-Fill-Variable"
@@ -620,6 +652,8 @@ export class FigmaCalculator extends FigmaDocumentParser {
                 counters.fills.partial++;
               else if (checkName === "Rounding-Variable")
                 counters.rounding.partial++;
+              else if (checkName === "Spacing-Variable")
+                counters.spacing.partial++;
               else if (
                 checkName === "Stroke-Fill-Style" ||
                 checkName === "Stroke-Fill-Variable"
@@ -636,6 +670,8 @@ export class FigmaCalculator extends FigmaDocumentParser {
                 counters.fills.none++;
               else if (checkName === "Rounding-Variable")
                 counters.rounding.none++;
+              else if (checkName === "Spacing-Variable")
+                counters.spacing.none++;
               else if (
                 checkName === "Stroke-Fill-Style" ||
                 checkName === "Stroke-Fill-Variable"
@@ -671,6 +707,11 @@ export class FigmaCalculator extends FigmaDocumentParser {
       compliance.rounding.attached += counters.rounding.full;
       compliance.rounding.detached += counters.rounding.partial;
       compliance.rounding.none += counters.rounding.none;
+
+      // There isn't Spacing style support, so pass thru
+      compliance.spacing.attached += counters.spacing.full;
+      compliance.spacing.detached += counters.spacing.partial;
+      compliance.spacing.none += counters.spacing.none;
 
       // We don't have Text variable support (yet), so pass thru
       compliance.text.attached += counters.text.full;

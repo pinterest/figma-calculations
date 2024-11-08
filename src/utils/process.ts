@@ -15,10 +15,9 @@ import {
 } from "../rules";
 import { makePercent } from "./percent";
 import {
-  HexColorToFigmaVariableMap,
-  RoundingToFigmaVariableMap,
   createHexColorToVariableMap,
   createRoundingToVariableMap,
+  createSpacingToVariableMap,
   getCollectionVariables,
 } from "./variables";
 
@@ -44,6 +43,7 @@ export function getProcessedNodes(
   allStyles: FigmaTeamStyle[],
   colorVariableCollectionIds: string[],
   roundingVariableCollectionIds: string[],
+  spacingVariableCollectionIds: string[],
   variables: FigmaLocalVariables,
   variableCollections: FigmaLocalVariableCollections,
   opts: ProcessedNodeOptions
@@ -51,7 +51,7 @@ export function getProcessedNodes(
   const styleBuckets = generateStyleBucket(allStyles);
   const styleLookupMap = generateStyleLookup(styleBuckets);
 
-  let { hexColorToVariableMap, roundingToVariableMap } = opts;
+  let { hexColorToVariableMap, roundingToVariableMap, spacingToVariableMap } = opts;
 
   if (
     variables &&
@@ -80,6 +80,19 @@ export function getProcessedNodes(
       );
       roundingToVariableMap = createRoundingToVariableMap(
         roundingVariableIds,
+        variables,
+        variableCollections
+      );
+    }
+
+    // Create a map of spacing values to variables, if not passed
+    if (!spacingToVariableMap && spacingVariableCollectionIds.length > 0) {
+      const spacingVariableIds = getCollectionVariables(
+        spacingVariableCollectionIds,
+        variableCollections
+      );
+      spacingToVariableMap = createSpacingToVariableMap(
+        spacingVariableIds,
         variables,
         variableCollections
       );
@@ -160,6 +173,7 @@ export function getProcessedNodes(
       styleLookupMap,
       hexColorToVariableMap,
       roundingToVariableMap,
+      spacingToVariableMap,
     });
 
     addToProcessedNodes({
