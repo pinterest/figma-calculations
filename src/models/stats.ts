@@ -51,10 +51,19 @@ export type RadiusVariable =
   | "topLeftRadius"
   | "topRightRadius";
 
+export type SpacingVariable =
+  | "counterAxisSpacing"
+  | "itemSpacing"
+  | "paddingBottom"
+  | "paddingLeft"
+  | "paddingRight"
+  | "paddingTop";
+
 export type LintCheckName =
   | "Fill-Style"
   | "Fill-Variable"
   | "Rounding-Variable"
+  | "Spacing-Variable"
   | "Stroke-Fill-Style"
   | "Stroke-Fill-Variable"
   | "Text-Style";
@@ -111,7 +120,7 @@ export type LintCheckPercent = {
 };
 
 export type AggregateCountsCompliance = {
-  [key in "fills" | "rounding" | "strokes" | "text"]: {
+  [key in "fills" | "rounding" | "spacing" | "strokes" | "text"]: {
     attached: number;
     detached: number;
     none: number;

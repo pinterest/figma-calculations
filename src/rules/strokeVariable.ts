@@ -53,6 +53,7 @@ export default function checkStrokeVariableMatch(
       checkName,
       opts.hexColorToVariableMap,
       {}, // opts.roundingToVariableMap not used in this check
+      {}, // opts.spacingToVariableMap not used in this check
       "STROKE",
       targetNode
     );

@@ -18,10 +18,12 @@ import checkTextMatch from "./textStyle";
 import {
   HexColorToFigmaVariableMap,
   RoundingToFigmaVariableMap,
+  SpacingToFigmaVariableMap,
 } from "../utils/variables";
 import checkFillVariableMatch from "./fillVariable";
 import checkStrokeVariableMatch from "./strokeVariable";
 import checkRoundingVariableMatch from "./roundingVariable";
+import checkSpacingVariableMatch from "./spacingVariable";
 
 /**
  * styleLookupMap - required for partial matches
@@ -31,6 +33,7 @@ export type LintCheckOptions = {
   styleLookupMap?: StyleLookupMap;
   hexColorToVariableMap?: HexColorToFigmaVariableMap;
   roundingToVariableMap?: RoundingToFigmaVariableMap;
+  spacingToVariableMap?: SpacingToFigmaVariableMap;
 };
 /**
  * Run through all partial matches, and make exceptions depending on rules
@@ -59,6 +62,7 @@ export const runSimilarityChecks = (
     checkFillVariableMatch,
     checkStrokeVariableMatch,
     checkRoundingVariableMatch,
+    checkSpacingVariableMatch,
   ];
 
   const results = [];
@@ -140,6 +144,17 @@ export const hasValidRoundingToMatch = (node: CornerMixin) => {
     rectangleCornerRadii.length > 0
   )
     return true;
+
+  return false;
+};
+
+export const hasValidSpacingToMatch = (node: CornerMixin) => {
+  const { layoutMode } = node as FrameNode;
+
+  // Spacing variables are only applicable when auto-layout is enabled
+  if (layoutMode === "HORIZONTAL" || layoutMode === "VERTICAL") {
+    return true;
+  }
 
   return false;
 };

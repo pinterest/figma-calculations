@@ -1,0 +1,57 @@
+{
+  "VariableCollectionId:265:2989": {
+    "defaultModeId": "265:0",
+    "id": "VariableCollectionId:265:2989",
+    "name": "Colors",
+    "remote": false,
+    "modes": [
+      {
+        "modeId": "265:0",
+        "name": "Light"
+      },
+      {
+        "modeId": "265:1",
+        "name": "Dark"
+      }
+    ],
+    "key": "4946b0f5dc6bdc872b0bc1ad0ad5e7f0a348e0ad",
+    "hiddenFromPublishing": false,
+    "variableIds": [
+      "VariableID:265:2997"
+    ]
+  },
+  "VariableCollectionId:701:7994": {
+    "defaultModeId": "7410:2",
+    "id": "VariableCollectionId:701:7994",
+    "name": "Rounding",
+    "remote": false,
+    "modes": [
+      {
+        "modeId": "7410:2",
+        "name": "Default"
+      }
+    ],
+    "key": "454579e84c4e3d565bcc0262f5a81e28942222c8",
+    "hiddenFromPublishing": false,
+    "variableIds": [
+      "VariableID:701:7996"
+    ]
+  },
+  "VariableCollectionId:733:939": {
+    "defaultModeId": "7410:3",
+    "id": "VariableCollectionId:733:939",
+    "name": "Spacing",
+    "remote": false,
+    "modes": [
+      {
+        "modeId": "7410:3",
+        "name": "Default"
+      }
+    ],
+    "key": "4e5f6934a1d3c0f5a8c815351342ff630b0bc069",
+    "hiddenFromPublishing": false,
+    "variableIds": [
+      "VariableID:7410:308"
+    ]
+  }
+}
