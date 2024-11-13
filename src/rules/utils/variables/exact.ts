@@ -114,6 +114,8 @@ export const isExactVariableMatch = (
 
     case "SPACING":
       {
+        const node = targetNode as FrameNode | InstanceNode;
+
         const matchingVariables: FigmaLocalVariable[] = [];
         (
           [
@@ -125,7 +127,7 @@ export const isExactVariableMatch = (
             "paddingTop",
           ] as SpacingVariable[]
         ).forEach((spacing) => {
-          const variableSubscribedId = (targetNode as FrameNode | InstanceNode).boundVariables?.[spacing]?.id;
+          const variableSubscribedId = node.boundVariables?.[spacing]?.id;
 
           if (variableSubscribedId) {
             const variable = getVariableFromSubscribedId(variableSubscribedId);
@@ -137,8 +139,16 @@ export const isExactVariableMatch = (
         });
 
         // If they all match, return the first one I guess?
+        // Also match if there are only 5 bound variables with counterAxisSpacing unbound if the
+        // node is not a WRAP layout, because counterAxisSpacing is only used when Direction = WRAP
         // :TODO: Do callers use this returned variable key?
-        if (matchingVariables.length === 6) return matchingVariables[0];
+        if (
+          matchingVariables.length === 6 ||
+          (matchingVariables.length === 5 &&
+            node.layoutWrap !== "WRAP" &&
+            node.boundVariables?.["counterAxisSpacing"]?.id === undefined)
+        )
+          return matchingVariables[0];
       }
       break;
 
