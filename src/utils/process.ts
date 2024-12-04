@@ -109,28 +109,24 @@ export function getProcessedNodes(
     processedNodes.push(node);
   };
 
-  // find all the nodes in the document
+  // Find all the nodes in the document
   const allNodes = FigmaDocumentParser.FindAll(rootNode, (n) => true);
 
   let nonHiddenNonIgnoredNodes: BaseNode[] = [];
 
-  // toss any hidden nodes, get the counts
-  const { nonHiddenNodes, numHiddenLayers } =
-    FigmaCalculator.filterHiddenNodes(allNodes);
-    nonHiddenNonIgnoredNodes = nonHiddenNodes;
-
-  // toss any ignored component nodes
-  let nonIgnoredNodes: BaseNode[];
+  // Filter out any ignored component instance nodes first
+  let nonIgnoredNodes: BaseNode[] = allNodes;
   let numIgnoredLayers: number = 0;
   if (opts?.ignoredComponentKeys?.length) {
-    ({ nonIgnoredNodes, numIgnoredLayers } =
-      FigmaCalculator.filterIgnoredComponentNodes(
-        nonHiddenNodes,
-        opts?.ignoredComponentKeys
-      ));
-
-      nonHiddenNonIgnoredNodes = nonIgnoredNodes;
+    ({ nonIgnoredNodes, numIgnoredLayers } = FigmaCalculator.filterIgnoredComponentNodes(
+      allNodes,
+      opts.ignoredComponentKeys
+    ));
   }
+
+  // Filter any hidden nodes, get the count of hidden layers
+  const { nonHiddenNodes, numHiddenLayers } = FigmaCalculator.filterHiddenNodes(nonIgnoredNodes);
+  nonHiddenNonIgnoredNodes = nonHiddenNodes;
 
   // toss any library nodes from the list
   const { nonLibraryNodes, numLibraryNodes, libraryNodes } =
