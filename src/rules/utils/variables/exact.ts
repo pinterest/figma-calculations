@@ -79,7 +79,7 @@ export const isExactVariableMatch = (
 
         if (variableSubscribedId) {
           const variable = getVariableFromSubscribedId(variableSubscribedId);
-          if (variable && variable.scopes.includes("CORNER_RADIUS")) {
+          if (variable && (variable.scopes.includes("CORNER_RADIUS") || variable.scopes.includes("ALL_SCOPES"))) {
             return variable;
           }
         }
@@ -100,7 +100,7 @@ export const isExactVariableMatch = (
           if (variableSubscribedId) {
             const variable = getVariableFromSubscribedId(variableSubscribedId);
 
-            if (variable && variable.scopes.includes("CORNER_RADIUS")) {
+            if (variable && (variable.scopes.includes("CORNER_RADIUS") || variable.scopes.includes("ALL_SCOPES"))) {
               matchingVariables.push(variable);
             }
           }
@@ -132,7 +132,7 @@ export const isExactVariableMatch = (
           if (variableSubscribedId) {
             const variable = getVariableFromSubscribedId(variableSubscribedId);
 
-            if (variable && variable.scopes.includes("GAP")) {
+            if (variable && (variable.scopes.includes("GAP") || variable.scopes.includes("ALL_SCOPES"))) {
               matchingVariables.push(variable);
             }
           }
