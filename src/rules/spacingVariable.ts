@@ -16,6 +16,9 @@ export default function checkSpacingVariableMatch(
 ): LintCheck {
   const checkName: LintCheckName = "Spacing-Variable";
 
+  // If we don't get a spacingToVariableMap, let's assume we should do any spacing checks at all
+  if (!opts?.spacingToVariableMap) return { checkName, matchLevel: "Skip", suggestions: [] };
+
   // Check if correct Node Type. Only Frames and Instances can have spacing
   if (
     !isNodeOfTypeAndVisible(
