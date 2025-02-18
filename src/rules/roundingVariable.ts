@@ -16,6 +16,9 @@ export default function checkRoundingVariableMatch(
 ): LintCheck {
   const checkName: LintCheckName = "Rounding-Variable";
 
+  // If we don't get a roundingToVariableMap, let's assume we should do any rounding checks at all
+  if (!opts?.roundingToVariableMap) return { checkName, matchLevel: "Skip", suggestions: [] };
+
   // Check if correct Node Type
   // REST API uses "REGULAR_POLYGON" but Figma uses "POLYGON"
   if (
