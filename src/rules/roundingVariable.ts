@@ -50,6 +50,7 @@ export default function checkRoundingVariableMatch(
       {}, // opts.hexColorToVariableMap not used in this check
       opts.roundingToVariableMap,
       {}, // opts.spacingToVariableMap not used in this check
+      variables,
       "ROUNDING",
       targetNode
     );

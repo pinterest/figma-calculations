@@ -6,6 +6,7 @@ import {
   createVariableModeNameMap,
   getCollectionVariables,
   getModeValues,
+  getVariableFromSubscribedId,
   isVariableAlias,
   resolveVariableValue,
   rgbaToHex,
@@ -80,7 +81,13 @@ describe("getCollectionVariables", () => {
     ];
     const variableIds = getCollectionVariables(variableCollectionIds, variableCollections);
 
-    expect(variableIds).toEqual(["VariableID:265:2997", "VariableID:701:7996", "VariableID:7410:308"]);
+    expect(variableIds).toEqual([
+      "VariableID:265:2997",
+      "VariableID:701:7995",
+      "VariableID:701:7996",
+      "VariableID:701:8001",
+      "VariableID:7410:308",
+    ]);
   });
 });
 
@@ -129,7 +136,7 @@ describe("createVariableMapVariable", () => {
       variableKey: "b5210392296e696d0a8bb2f92aea2b1c3f4bfdb6",
       variableCollectionId: "VariableCollectionId:265:2989",
       variableCollectionKey: "4946b0f5dc6bdc872b0bc1ad0ad5e7f0a348e0ad",
-      variableCollectionName: "Colors",
+      variableCollectionName: "Semantic colors",
       variableCollectionDefaultModeId: "265:0",
       modeId: "265:1",
       modeName: "Dark",
@@ -183,7 +190,7 @@ describe("createHexColorToVariableMap", () => {
           variableKey: "b5210392296e696d0a8bb2f92aea2b1c3f4bfdb6",
           variableCollectionId: "VariableCollectionId:265:2989",
           variableCollectionKey: "4946b0f5dc6bdc872b0bc1ad0ad5e7f0a348e0ad",
-          variableCollectionName: "Colors",
+          variableCollectionName: "Semantic colors",
           variableCollectionDefaultModeId: "265:0",
           modeId: "265:0",
           modeName: "Light",
@@ -198,7 +205,7 @@ describe("createHexColorToVariableMap", () => {
           variableKey: "b5210392296e696d0a8bb2f92aea2b1c3f4bfdb6",
           variableCollectionId: "VariableCollectionId:265:2989",
           variableCollectionKey: "4946b0f5dc6bdc872b0bc1ad0ad5e7f0a348e0ad",
-          variableCollectionName: "Colors",
+          variableCollectionName: "Semantic colors",
           variableCollectionDefaultModeId: "265:0",
           modeId: "265:1",
           modeName: "Dark",
@@ -214,6 +221,21 @@ describe("createHexColorToVariableMap", () => {
 
     expect(map).toBeDefined();
     expect(map).toEqual({
+      "0": [
+        {
+          description: "",
+          modeId: "7410:2",
+          modeName: "Default",
+          name: "sema/rounding/0",
+          scopes: ["CORNER_RADIUS"],
+          variableCollectionDefaultModeId: "7410:2",
+          variableCollectionId: "VariableCollectionId:701:7994",
+          variableCollectionKey: "454579e84c4e3d565bcc0262f5a81e28942222c8",
+          variableCollectionName: "Semantic rounding",
+          variableId: "VariableID:701:7995",
+          variableKey: "b8104873d65e469556270ab0985dfcbdc9a7086c",
+        },
+      ],
       "4": [
         {
           name: "sema/rounding/100",
@@ -222,11 +244,26 @@ describe("createHexColorToVariableMap", () => {
           variableKey: "96b13ef45e11ceadb81ba0281b9e876c2b14d3dd",
           variableCollectionId: "VariableCollectionId:701:7994",
           variableCollectionKey: "454579e84c4e3d565bcc0262f5a81e28942222c8",
-          variableCollectionName: "Rounding",
+          variableCollectionName: "Semantic rounding",
           variableCollectionDefaultModeId: "7410:2",
           modeId: "7410:2",
           modeName: "Default",
           scopes: ["CORNER_RADIUS"],
+        },
+      ],
+      "8": [
+        {
+          description: "",
+          modeId: "7410:2",
+          modeName: "Default",
+          name: "sema/rounding/200",
+          scopes: ["CORNER_RADIUS"],
+          variableCollectionDefaultModeId: "7410:2",
+          variableCollectionId: "VariableCollectionId:701:7994",
+          variableCollectionKey: "454579e84c4e3d565bcc0262f5a81e28942222c8",
+          variableCollectionName: "Semantic rounding",
+          variableId: "VariableID:701:8001",
+          variableKey: "398b5412063626a7ef90d14240574337c0275f1f",
         },
       ],
     });
@@ -246,7 +283,7 @@ describe("createHexColorToVariableMap", () => {
           variableKey: "514b51e50626e605fc9d07668d22492e53c671dd",
           variableCollectionId: "VariableCollectionId:733:939",
           variableCollectionKey: "4e5f6934a1d3c0f5a8c815351342ff630b0bc069",
-          variableCollectionName: "Spacing",
+          variableCollectionName: "Semantic spacing",
           variableCollectionDefaultModeId: "7410:3",
           modeId: "7410:3",
           modeName: "Default",
@@ -254,5 +291,16 @@ describe("createHexColorToVariableMap", () => {
         },
       ],
     });
+  });
+
+  // Test the getVariableFromSubscribedId method
+  test("Returns a variable from a subscribed id", () => {
+    const variableId = "VariableID:701:7995";
+    const variable = variables[variableId];
+
+    const variableSubscribedId = "VariableID:b8104873d65e469556270ab0985dfcbdc9a7086c/6719:357";
+
+    const result = getVariableFromSubscribedId(variables, variableSubscribedId);
+    expect(result).toEqual(variable); // This is a shallow comparison of the object
   });
 });

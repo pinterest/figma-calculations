@@ -1,4 +1,5 @@
-import { FigmaLocalVariableCollections, FigmaLocalVariables } from "../models/figma";
+import { FigmaLocalVariable, FigmaLocalVariableCollections, FigmaLocalVariables } from "../models/figma";
+import { RadiusVariable } from "../models/stats";
 
 export type FigmaVariableMapVariable = {
   name: string;
@@ -52,6 +53,55 @@ export const getCollectionVariables = (
       return variableCollections[collectionId].variableIds;
     })
     .flat();
+};
+
+// Extract the variable key from a subscribed_id string in the format:
+// VariableID:2eba2a28539ae56f55778b021a50ecafea5bb4eb/6719:357
+export const getVariableFromSubscribedId = (
+  variables: FigmaLocalVariables,
+  subscribedId: string
+): FigmaLocalVariable | undefined => {
+  const match = subscribedId.match(/VariableID:(\w+)\//);
+  const variableKey = match?.[1] ?? undefined;
+
+  return variableKey ? Object.values(variables).find((v) => v.key === variableKey) : undefined;
+};
+
+// The Plugin API resolvedVariableModes property is an array of values in the form:
+// {VariableCollectionId:4946b0f5dc6bdc872b0bc1ad0ad5e7f0a348e0ad/3979:69: "265:0"}
+//
+// ref: https://www.figma.com/plugin-docs/api/properties/nodes-resolvedvariablemodes/
+//
+// Note: The Figma REST API doesn't have resolvedVariableModes, only explicitVariableModesMap,
+// so we need to walk up the node hierarchy and calculate it ourselves if we want to use it
+// for REST API loaded files/pages.
+//
+// Also, starting in Oct 2024.. the Plugin API no longer generates the resolvedVariableModes object
+// for nodes that aren't using any variables, so either way we need to make our own by using
+// explicitVariableModes *sigh*
+export const calculateResolvedVariableModesMap = (targetNode: BaseNode): Map<string, string> => {
+  let resolvedVariableModesMap = new Map<string, string>();
+
+  // Walk up all the node parents, collecting and merging the explicitVariableModes
+  // to calculate our own equivalent resolvedVariableModes... and in the form of a
+  // lookup map for faster filtering
+  let currentNode = targetNode as SceneNode | BaseNode | null;
+  while (currentNode && currentNode.type !== "DOCUMENT") {
+    const modes = currentNode.explicitVariableModes ?? {};
+
+    for (const [key, value] of Object.entries(modes)) {
+      const collectionKey = key.match(/:(.+)\//)?.[1];
+
+      // Check if the key already exists in the map to ensure the closest parent mode takes precedence
+      if (collectionKey && !resolvedVariableModesMap.has(collectionKey)) {
+        resolvedVariableModesMap.set(collectionKey, value);
+      }
+    }
+
+    currentNode = currentNode.parent;
+  }
+
+  return resolvedVariableModesMap;
 };
 
 // A type guard to narrow down the type to be a Figma VariableAlias type
@@ -195,7 +245,8 @@ export const getModeValues = (
     .filter(nonNullable);
 };
 
-// #region Color Variables
+//------------------------------------------------------------
+//#region Color Variables
 
 // Group variables by their hex value
 export const createHexColorToVariableMap = (
@@ -233,9 +284,20 @@ export const createHexColorToVariableMap = (
     return acc;
   }, {});
 };
-// #endregion Color Variables
 
-// #region: Rounding Variables
+//#endregion Color Variables
+//------------------------------------------------------------
+//#region Rounding Variables
+
+// Note: The order matters for the corner radii values here because the
+// REST API encodes the four radii values in the "rectangleCornerRadii" array, as defined by:
+// > Array of length 4 of the radius of each corner of the frame, starting in the top left and proceeding clockwise
+export const CORNER_RADII: RadiusVariable[] = [
+  "topLeftRadius",
+  "topRightRadius",
+  "bottomRightRadius",
+  "bottomLeftRadius",
+];
 
 // Group rounding variables by their radius value
 export const createRoundingToVariableMap = (
@@ -269,9 +331,9 @@ export const createRoundingToVariableMap = (
   }, {});
 };
 
-// #endregion: Rounding Variables
-
-// #region: Spacing Variables
+//#endregion Rounding Variables
+//------------------------------------------------------------
+//#region Spacing Variables
 
 // Group spacing variables by their value
 export const createSpacingToVariableMap = (
@@ -305,4 +367,5 @@ export const createSpacingToVariableMap = (
   }, {});
 };
 
-// #endregion: Spacing Variables
+//#endregion Spacing Variables
+//------------------------------------------------------------

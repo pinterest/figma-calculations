@@ -49,6 +49,7 @@ export default function checkSpacingVariableMatch(
       {}, // opts.hexColorToVariableMap not used in this check
       {}, // opts.roundingToVariableMap not used in this check
       opts.spacingToVariableMap,
+      variables,
       "SPACING",
       targetNode
     );

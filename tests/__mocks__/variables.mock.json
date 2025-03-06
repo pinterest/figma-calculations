@@ -68,6 +68,23 @@
     ],
     "codeSyntax": {}
   },
+  "VariableID:701:7995": {
+    "id": "VariableID:701:7995",
+    "name": "sema/rounding/0",
+    "remote": false,
+    "key": "b8104873d65e469556270ab0985dfcbdc9a7086c",
+    "variableCollectionId": "VariableCollectionId:701:7994",
+    "resolvedType": "FLOAT",
+    "description": "",
+    "hiddenFromPublishing": false,
+    "valuesByMode": {
+      "7410:2": 0
+    },
+    "scopes": [
+      "CORNER_RADIUS"
+    ],
+    "codeSyntax": {}
+  },
   "VariableID:701:7996": {
     "id": "VariableID:701:7996",
     "name": "sema/rounding/100",
@@ -79,6 +96,23 @@
     "hiddenFromPublishing": false,
     "valuesByMode": {
       "7410:2": 4
+    },
+    "scopes": [
+      "CORNER_RADIUS"
+    ],
+    "codeSyntax": {}
+  },
+  "VariableID:701:8001": {
+    "id": "VariableID:701:8001",
+    "name": "sema/rounding/200",
+    "remote": false,
+    "key": "398b5412063626a7ef90d14240574337c0275f1f",
+    "variableCollectionId": "VariableCollectionId:701:7994",
+    "resolvedType": "FLOAT",
+    "description": "",
+    "hiddenFromPublishing": false,
+    "valuesByMode": {
+      "7410:2": 8
     },
     "scopes": [
       "CORNER_RADIUS"

@@ -1,22 +1,12 @@
 import { FigmaLocalVariable, FigmaLocalVariables } from "../../../models/figma";
-import { RadiusVariable, SpacingVariable } from "../../../models/stats";
+import { SpacingVariable } from "../../../models/stats";
+import { CORNER_RADII, getVariableFromSubscribedId } from "../../../utils/variables";
 
 export const isExactVariableMatch = (
   variableType: "FILL" | "ROUNDING" | "SPACING" | "STROKE",
   variables: FigmaLocalVariables,
   targetNode: BaseNode
 ): FigmaLocalVariable | undefined => {
-  // Extract the variable key from a subscribed_id string in the format:
-  // VariableID:2eba2a28539ae56f55778b021a50ecafea5bb4eb/6719:357
-  function getVariableFromSubscribedId(subscribedId: string) {
-    const match = subscribedId.match(/VariableID:(\w+)\//);
-    const variableKey = match?.[1] ?? undefined;
-
-    return (
-      variableKey && Object.values(variables).find((v) => v.key === variableKey)
-    );
-  }
-
   switch (variableType) {
     case "FILL":
       {
@@ -33,7 +23,7 @@ export const isExactVariableMatch = (
           .boundVariables?.fills?.[0].id;
 
         if (variableSubscribedId) {
-          const variable = getVariableFromSubscribedId(variableSubscribedId);
+          const variable = getVariableFromSubscribedId(variables, variableSubscribedId);
 
           // const figmaLoadedVariable = figma.variables.getVariableById(variableId);
           // console.log("Got figma loaded variable:", figmaLoadedVariable);
@@ -57,7 +47,7 @@ export const isExactVariableMatch = (
           .boundVariables?.strokes?.[0].id;
 
         if (variableSubscribedId) {
-          const variable = getVariableFromSubscribedId(variableSubscribedId);
+          const variable = getVariableFromSubscribedId(variables, variableSubscribedId);
 
           if (
             variable &&
@@ -74,11 +64,10 @@ export const isExactVariableMatch = (
       {
         // Non-Rectangle nodes (e.g. Polygon, Star) can have a single cornerRadius bound variable
         // NOTE: boundVariables.cornerRadius isn't documented or in the Figma typings currently, so using any
-        const variableSubscribedId = (targetNode as any).boundVariables
-          ?.cornerRadius?.id;
+        const variableSubscribedId = (targetNode as any).boundVariables?.cornerRadius?.id;
 
         if (variableSubscribedId) {
-          const variable = getVariableFromSubscribedId(variableSubscribedId);
+          const variable = getVariableFromSubscribedId(variables, variableSubscribedId);
           if (variable && (variable.scopes.includes("CORNER_RADIUS") || variable.scopes.includes("ALL_SCOPES"))) {
             return variable;
           }
@@ -86,19 +75,11 @@ export const isExactVariableMatch = (
 
         // Otherwise, check all the corner radius bound variables, if they exist
         const matchingVariables: FigmaLocalVariable[] = [];
-        (
-          [
-            "bottomLeftRadius",
-            "bottomRightRadius",
-            "topLeftRadius",
-            "topRightRadius",
-          ] as RadiusVariable[]
-        ).forEach((radius) => {
-          const variableSubscribedId = (targetNode as RectangleNode)
-            .boundVariables?.[radius]?.id;
+        CORNER_RADII.forEach((radii) => {
+          const variableSubscribedId = (targetNode as RectangleNode).boundVariables?.[radii]?.id;
 
           if (variableSubscribedId) {
-            const variable = getVariableFromSubscribedId(variableSubscribedId);
+            const variable = getVariableFromSubscribedId(variables, variableSubscribedId);
 
             if (variable && (variable.scopes.includes("CORNER_RADIUS") || variable.scopes.includes("ALL_SCOPES"))) {
               matchingVariables.push(variable);
@@ -130,7 +111,7 @@ export const isExactVariableMatch = (
           const variableSubscribedId = node.boundVariables?.[spacing]?.id;
 
           if (variableSubscribedId) {
-            const variable = getVariableFromSubscribedId(variableSubscribedId);
+            const variable = getVariableFromSubscribedId(variables, variableSubscribedId);
 
             if (variable && (variable.scopes.includes("GAP") || variable.scopes.includes("ALL_SCOPES"))) {
               matchingVariables.push(variable);

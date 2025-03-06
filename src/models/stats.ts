@@ -83,7 +83,9 @@ export type LintSuggestionStyle = LintSuggestionBase & {
 
 export type LintSuggestionVariable = LintSuggestionBase & {
   type: "Variable";
-  hexColor?: string;
+  hexColor?: string; // FILL/STROKE Colors only
+  corner?: "all" | RadiusVariable; // Rounding only
+  cornerValue?: number; // Rounding only
   variableId: string;
   variableKey: string;
   variableCollectionId: string;

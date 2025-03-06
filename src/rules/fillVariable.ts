@@ -54,6 +54,7 @@ export default function checkFillVariableMatch(
       opts.hexColorToVariableMap,
       {}, // opts.roundingToVariableMap not used in this check
       {}, // opts.spacingToVariableMap not used in this check
+      variables,
       "FILL",
       targetNode
     );
