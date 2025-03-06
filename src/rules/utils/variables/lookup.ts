@@ -1,10 +1,11 @@
+import { FigmaLocalVariables } from "../../../models/figma";
+import { LintCheckName, LintCheck, LintSuggestionVariable } from "../../../models/stats";
+
 import {
-  LintCheckName,
-  LintCheck,
-  LintSuggestionVariable,
-} from "../../../models/stats";
-import {
+  calculateResolvedVariableModesMap,
+  CORNER_RADII,
   FigmaVariableMapVariable,
+  getVariableFromSubscribedId,
   HexColorToFigmaVariableMap,
   rgbaToHex,
   RoundingToFigmaVariableMap,
@@ -16,12 +17,49 @@ export default function getVariableLookupMatches(
   hexColorToVariableMap: HexColorToFigmaVariableMap,
   roundingToVariableMap: RoundingToFigmaVariableMap,
   spacingToVariableMap: SpacingToFigmaVariableMap,
+  variables: FigmaLocalVariables,
   variableType: "FILL" | "ROUNDING" | "SPACING" | "STROKE",
   targetNode: BaseNode
 ): LintCheck {
   const suggestions: LintSuggestionVariable[] = [];
-  let variables: FigmaVariableMapVariable[] | undefined;
+  let variableMatches: FigmaVariableMapVariable[] | undefined;
   let hexColor: string | undefined;
+
+  function addSuggestions(
+    variableMatches: FigmaVariableMapVariable[],
+    resolvedVariableModesMap: Map<string, string>,
+    additionalProps: any = {}
+  ): void {
+    // Filter down the list of variables to those that either match the current resolvedVariableMode
+    // for the node, if it exists, otherwise use the collection's default mode
+    variableMatches = variableMatches.filter((v) => {
+      const modeToMatch = resolvedVariableModesMap.get(v.variableCollectionKey) || v.variableCollectionDefaultModeId;
+
+      return v.modeId === modeToMatch;
+    });
+
+    for (const v of variableMatches) {
+      const suggestion: LintSuggestionVariable = {
+        type: "Variable",
+        message: `Possible Gestalt ${checkName} match with name: ${v.name}`,
+        name: v.name,
+        description: v.description,
+        variableId: v.variableId,
+        variableKey: v.variableKey,
+        variableCollectionId: v.variableCollectionId,
+        variableCollectionKey: v.variableCollectionKey,
+        variableCollectionName: v.variableCollectionName,
+        modeId: v.modeId,
+        modeName: v.modeName,
+        scopes: v.scopes,
+      };
+
+      // Add any additional properties to the suggestion
+      Object.assign(suggestion, additionalProps);
+
+      suggestions.push(suggestion);
+    }
+  }
 
   switch (variableType) {
     case "FILL":
@@ -48,22 +86,61 @@ export default function getVariableLookupMatches(
           };
 
           hexColor = rgbaToHex(rgba);
-          variables = hexColorToVariableMap[hexColor];
+          variableMatches = hexColorToVariableMap[hexColor];
+
+          if (variableMatches) {
+            const resolvedVariableModesMap = calculateResolvedVariableModesMap(targetNode);
+            addSuggestions(variableMatches, resolvedVariableModesMap, { hexColor });
+          }
         }
       }
       break;
 
     case "ROUNDING":
-      // Only offer rounding suggestions for nodes that have a single, non-figma.mixed cornerRadius
-      // :TODO: Figure out if we want to expanded this to support figma.mixed radius values,
-      // which would mean needing to separately check and return...
+      // Offer rounding suggestions for nodes that have a single, non-figma.mixed cornerRadius
+      // and support individual corner radii suggestions
       //
       // Plugin API: "bottomLeftRadius", "bottomRightRadius", "topLeftRadius", "topRightRadius"
-      // REST API: the four values in the "rectangleCornerRadii" array
+      // REST API: Has four values in the "rectangleCornerRadii" array, as defined by:
+      // > Array of length 4 of the radius of each corner of the frame, starting in the top left and proceeding clockwise
       //
-      const cornerRadius = (targetNode as CornerMixin).cornerRadius;
-      if (typeof cornerRadius === "number") {
-        variables = roundingToVariableMap[cornerRadius];
+
+      // Calculate the node resolvedVariableModesMap once so we can reuse it for all matching
+      const resolvedVariableModesMap = calculateResolvedVariableModesMap(targetNode);
+
+      const { cornerRadius } = targetNode as CornerMixin;
+
+      if (cornerRadius && typeof cornerRadius === "number") {
+        variableMatches = roundingToVariableMap[cornerRadius];
+        if (variableMatches) {
+          addSuggestions(variableMatches, resolvedVariableModesMap, { corner: "all", cornerValue: cornerRadius });
+        }
+      } else {
+        CORNER_RADII.forEach((radii, index) => {
+          const variableSubscribedId = (targetNode as RectangleNode).boundVariables?.[radii]?.id;
+
+          const variable = variableSubscribedId
+            ? getVariableFromSubscribedId(variables, variableSubscribedId)
+            : undefined;
+
+          if (variable) {
+            // If the variable is bound, and it exists, we don't need suggestions for this radii
+            // console.log("Variable found for radii:", radii, variable);
+          } else {
+            // Plugin uses named properties, REST API uses an array of values in rectangleCornerRadii
+            const radiiValue =
+              (targetNode as RectangleNode)[radii] ?? (targetNode as any).rectangleCornerRadii?.[index];
+
+            const matchesForThisRadii = roundingToVariableMap[radiiValue];
+
+            if (matchesForThisRadii) {
+              addSuggestions(matchesForThisRadii, resolvedVariableModesMap, {
+                corner: radii,
+                cornerValue: radiiValue,
+              });
+            }
+          }
+        });
       }
       break;
 
@@ -76,76 +153,6 @@ export default function getVariableLookupMatches(
       // Make sure all variable types are handled
       const _unreachable: never = variableType;
       throw new Error(`Unhandled variableType: ${_unreachable}`);
-    }
-  }
-
-  if (variables) {
-    // Filter out variables that don't match the resolvedVariableModes for the node
-    //
-    // The Plugin API resolvedVariableModes property is an array of values in the form:
-    // {VariableCollectionId:4946b0f5dc6bdc872b0bc1ad0ad5e7f0a348e0ad/3979:69: "265:0"}
-    //
-    // ref: https://www.figma.com/plugin-docs/api/properties/nodes-resolvedvariablemodes/
-    //
-    // Note: The Figma REST API doesn't have resolvedVariableModes, only explicitVariableModesMap,
-    // so we need to walk up the node hierarchy and calculate it ourselves if we want to use it
-    // for REST API loaded files/pages.
-    //
-    // Also, starting in Oct 2024.. the Plugin API no longer generates the resolvedVariableModes object
-    // for nodes that aren't using any variables, so either way we need to make our own by using
-    // explicitVariableModes *sigh*
-
-    let resolvedVariableModesMap = new Map<string, string>();
-
-    // Walk up all the node parents, collecting and merging the explicitVariableModes
-    // to calculate our own equivalent resolvedVariableModes... and in the form of a
-    // lookup map for faster filtering
-    let currentNode = targetNode as SceneNode | BaseNode | null;
-    while (currentNode && currentNode.type !== "DOCUMENT") {
-      const modes = currentNode.explicitVariableModes ?? {};
-
-      for (const [key, value] of Object.entries(modes)) {
-        const collectionKey = key.match(/:(.+)\//)?.[1];
-
-        // Check if the key already exists in the map to ensure the closest parent mode takes precedence
-        if (collectionKey && !resolvedVariableModesMap.has(collectionKey)) {
-          resolvedVariableModesMap.set(collectionKey, value);
-        }
-      }
-
-      currentNode = currentNode.parent;
-    }
-
-    // Filter down the list of variables to those that either match the current resolvedVariableMode
-    // for the node, if it exists, otherwise use the collection's default mode
-    variables = variables.filter((v) => {
-      const modeToMatch =
-        resolvedVariableModesMap.get(v.variableCollectionKey) ||
-        v.variableCollectionDefaultModeId;
-
-      return v.modeId === modeToMatch;
-    });
-
-    for (const v of variables) {
-      const suggestion: LintSuggestionVariable = {
-        type: "Variable",
-        message: `Possible Gestalt ${checkName} match with name: ${v.name}`,
-        name: v.name,
-        description: v.description,
-        variableId: v.variableId,
-        variableKey: v.variableKey,
-        variableCollectionId: v.variableCollectionId,
-        variableCollectionKey: v.variableCollectionKey,
-        variableCollectionName: v.variableCollectionName,
-        modeId: v.modeId,
-        modeName: v.modeName,
-        scopes: v.scopes,
-      };
-
-      // Only used for FILL and STROKE suggestions
-      if (hexColor) suggestion.hexColor = hexColor;
-
-      suggestions.push(suggestion);
     }
   }
 

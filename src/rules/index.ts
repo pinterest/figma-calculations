@@ -16,6 +16,7 @@ import checkFillStyleMatch from "./fillStyle";
 import checkStrokeStyleMatch from "./strokeStyle";
 import checkTextMatch from "./textStyle";
 import {
+  CORNER_RADII,
   HexColorToFigmaVariableMap,
   RoundingToFigmaVariableMap,
   SpacingToFigmaVariableMap,
@@ -104,6 +105,8 @@ export const hasValidFillToMatch = (node: MinimalFillsMixin) => {
   );
 };
 
+// Measurement exception note: The default 0 radius is exempt when used as a single
+// cornerRadius value, or if all four corners are 0
 export const hasValidRoundingToMatch = (node: CornerMixin) => {
   // Cloud files use rectangleCornerRadii when there are different values for corner radii
   const { cornerRadius, rectangleCornerRadii } = node as any;
@@ -112,36 +115,29 @@ export const hasValidRoundingToMatch = (node: CornerMixin) => {
   if (cornerRadius !== undefined) {
     if (
       typeof cornerRadius === "number" && // and it's a number
-      cornerRadius !== 0 // and it's not the default 0 value corner radius value
+      cornerRadius !== 0 // and it's not the default 0 value corner radius value, which is exempt
     )
       return true;
 
-    // and it's not a number... ala figma.mixed
+    // and it's not a number... ala figma.mixed (Plugin API only)
     if (typeof cornerRadius !== "number") {
-      const {
-        bottomLeftRadius,
-        bottomRightRadius,
-        topLeftRadius,
-        topRightRadius,
-      } = node as RectangleNode;
-
-      // ...and there are individual corner radii defined
-      return (
-        bottomLeftRadius !== undefined &&
-        bottomRightRadius !== undefined &&
-        topLeftRadius !== undefined &&
-        topRightRadius !== undefined
-      );
+      // Valid for matching when all individual corner radii are defined, and any of the
+      // corners are not 0 (all zeros is exempt)
+      const n = node as RectangleNode;
+      return CORNER_RADII.every((r) => n[r] !== undefined) && CORNER_RADII.some((r) => n[r] > 0);
     }
   }
 
-  // Cloud files use rectangleCornerRadii when there are different values for
+  // Cloud files use rectangleCornerRadii when there are separate values for
   // corner radii for Rectangle (and Frame) nodes
-  // Other shapes, like Vector and Star, can only have a single value and use cornerRadius
+  // Other shapes, like Vector and Star, can only have a single value and use cornerRadius.
+  // Valid for matching when rectangleCornerRadii exists, is an array, and any of the
+  // corners are not 0 (all zeros is exempt)
   else if (
     rectangleCornerRadii !== undefined &&
     Array.isArray(rectangleCornerRadii) &&
-    rectangleCornerRadii.length > 0
+    rectangleCornerRadii.length > 0 &&
+    rectangleCornerRadii.some((r) => r > 0)
   )
     return true;
 
