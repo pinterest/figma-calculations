@@ -752,7 +752,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
     const adoptionPercent = makePercent(
       (allTotals.totalNodesInLibrary + allTotals.totalMatchingText) /
-        allTotals.totalNodesOnPage
+      allTotals.totalNodesOnPage
     );
 
     return adoptionPercent;
@@ -922,4 +922,59 @@ export class FigmaCalculator extends FigmaDocumentParser {
    * WARNING: Running this in a Figma Context will modify your files! Run figma.commitUndo prior
    */
   cleanupTree = LintCleaner.run;
+
+  /**
+   * Get dev resources from a file
+   * @param fileKey - the file id to get dev resources from
+   */
+  async getDevResources(fileKey: string, nodeId?: string): Promise<any> {
+    if (!this.apiToken) throw new Error("No Figma API token provided");
+    return FigmaAPIHelper.getDevResources(fileKey, nodeId);
+  }
+
+  /**
+   * Get a list of files that have dev resources attached
+   * @param files - array of Figma files to check
+   */
+  async getFilesWithDevResources(files: any[]): Promise<{
+    fileKey: string;
+    fileName: string;
+    devResources: any;
+  }[]> {
+    const filesWithResources = [];
+    const skippedFiles = [];
+
+    for (const file of files) {
+      if (file.type === 'figjam') {
+        skippedFiles.push({ name: file.name, reason: 'FigJam file' });
+        continue;
+      }
+
+      try {
+        const response = await this.getDevResources(file.key);
+        if (response?.dev_resources && response.dev_resources.length > 0) {
+          filesWithResources.push({
+            fileKey: file.key,
+            fileName: file.name,
+            devResources: response.dev_resources
+          });
+        }
+      } catch (ex: any) {
+        if (ex.response?.status === 404) {
+          skippedFiles.push({ name: file.name, reason: 'Not found or no access' });
+        } else {
+          console.log(`Error fetching dev resources for ${file.name} (${file.key}):`, ex.message);
+        }
+      }
+    }
+
+    if (skippedFiles.length > 0) {
+      console.log('\nSkipped files:');
+      skippedFiles.forEach(file => {
+        console.log(`- ${file.name}: ${file.reason}`);
+      });
+    }
+
+    return filesWithResources;
+  }
 }
