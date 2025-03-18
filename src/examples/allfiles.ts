@@ -53,9 +53,10 @@ const doWork = async () => {
     // run through all of the pages and process them
     if (onlyTrackReadyForDev) {
       for (const page of figmaCalculator.getAllPages()) {
-        const readyForDevNodes = page.children?.filter((node: BaseNode) =>
+        // Use FindAll to recursively find all READY_FOR_DEV nodes
+        const readyForDevNodes = FigmaCalculator.FindAll(page, (node: BaseNode) =>
           (node as any).devStatus?.type === 'READY_FOR_DEV'
-        ) || [];
+        );
 
         fileReadyForDevSections += readyForDevNodes.length;
 
