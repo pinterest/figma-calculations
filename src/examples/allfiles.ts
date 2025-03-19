@@ -10,6 +10,7 @@ const figmaCalculator = new FigmaCalculator();
 
 const STYLE_TEAM_ID = process.env.FIGMA_STYLE_TEAM_ID || "";
 const TEAM_IDS = process.env.FIGMA_TEAM_IDS?.split(",").filter(Boolean) || [];
+const DESIGN_SYSTEM_FILE_KEY = process.env.FIGMA_DESIGN_SYSTEM_FILE_KEY || "";
 
 const FIGMA_TOKEN = process.env.FIGMA_API_TOKEN || "";
 
@@ -20,6 +21,24 @@ const onlyTrackReadyForDev = true;
 figmaCalculator.setAPIToken(FIGMA_TOKEN);
 
 const doWork = async () => {
+  let colorVariableCollectionIds: string[] = [];
+  try {
+    if (!DESIGN_SYSTEM_FILE_KEY) {
+      console.warn("No DESIGN_SYSTEM_FILE_KEY provided. Will not load variables.");
+    } else {
+      const designSystemVars = await figmaCalculator.loadLocalVariables(DESIGN_SYSTEM_FILE_KEY);
+
+      const idsPantryCollection = Object.values(designSystemVars.variableCollections)
+        .find(collection => collection.name === "IDS Pantry Tokens");
+
+      if (idsPantryCollection) {
+        colorVariableCollectionIds = [idsPantryCollection.id];
+      }
+    }
+  } catch (error) {
+    console.error("Error loading design system variables:", error);
+  }
+
   // optional: if not in figma plugin environment, load a file with this
   const { files } = await figmaCalculator.getFilesForTeams(TEAM_IDS, 2, false);
 
@@ -72,7 +91,9 @@ const doWork = async () => {
             devStatus: (node as any).devStatus,
             description: (node as any).devStatus?.description
           });
-          const processedNodes = figmaCalculator.processTree(node);
+          const processedNodes = figmaCalculator.processTree(node, {
+            colorVariableCollectionIds: colorVariableCollectionIds
+          });
           const pageDetails: ProcessedPage = {
             file,
             pageAggregates: processedNodes.aggregateCounts,
@@ -84,7 +105,9 @@ const doWork = async () => {
     } else {
       for (const page of figmaCalculator.getAllPages()) {
         console.log('Processing entire page');
-        const processedNodes = figmaCalculator.processTree(page);
+        const processedNodes = figmaCalculator.processTree(page, {
+          colorVariableCollectionIds: colorVariableCollectionIds
+        });
         const pageDetails: ProcessedPage = {
           file,
           pageAggregates: processedNodes.aggregateCounts,
@@ -110,7 +133,10 @@ const doWork = async () => {
   const fileName = `./all-pages-${onlyTrackReadyForDev ? 'ready-for-dev' : 'all'}-${timestamp}.json`;
   fs.writeFileSync(fileName, allPagesJson);
 
-  const teamBreakdown = figmaCalculator.getBreakDownByTeams(allPages);
+  // Include partial variable matches in the breakdown
+  const teamBreakdown = figmaCalculator.getBreakDownByTeams(allPages, {
+    includePartialVariables: true
+  });
   const teamBreakdownJson = JSON.stringify(teamBreakdown, null, 2);
   const teamBreakdownFileName = `./team-breakdown-${onlyTrackReadyForDev ? 'ready-for-dev' : 'all'}-${timestamp}.json`;
   fs.writeFileSync(teamBreakdownFileName, teamBreakdownJson);
