@@ -30,7 +30,7 @@ export default function getStyleLookupMatches(
       styleType = "FILL";
     }
 
-    if (stylesLookup[styleType][key]) {
+    if (stylesLookup[styleType] && stylesLookup[styleType][key]) {
       // a list of potential styles that match
       let possibleStyles = stylesLookup[styleType][key];
 

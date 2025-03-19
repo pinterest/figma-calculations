@@ -12,3 +12,6 @@ styles.json
 
 // NPM pack archive files
 figma-calculations-*.tgz
+
+.vscode/
+.env

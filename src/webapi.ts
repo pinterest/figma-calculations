@@ -306,6 +306,19 @@ export class FigmaAPIHelper {
     return data;
   }
 
+  static async getDevResources(fileKey: string, nodeId?: string): Promise<any> {
+    const resp = await axios.get(`${BASE_URL}/files/${fileKey}/dev_resources`, {
+      headers: {
+        "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
+      },
+      params: {
+        node_id: nodeId,
+      },
+    });
+    const data = resp.data as FigmaFile;
+    return data;
+  }
+
   /**
    * Breaks a list of styles into a relevant file key with styles so we can lookup by file
    */
