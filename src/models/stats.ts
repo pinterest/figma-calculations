@@ -43,6 +43,7 @@ export type AdoptionCalculationOptions = {
   includeMatchingText?: boolean;
   includePartialText?: boolean;
   includePartialFills?: boolean;
+  includePartialVariables?: boolean;
 };
 
 export type RadiusVariable =

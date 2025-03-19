@@ -211,9 +211,9 @@ export function getLintCheckPercent(
       allTotals.totalFullMatch += results.full;
       allTotals.totalPartialMatch += results.partial;
 
-      if (opts && opts.includePartials) {
-        allTotals.totalFullMatch += results.partial;
-      }
+      // if (opts && opts.includePartials) {
+      //   allTotals.totalFullMatch += results.partial;
+      // }
       allTotals.totalNodes += results.partial + results.full + results.none;
     }
   }

@@ -785,6 +785,19 @@ export class FigmaCalculator extends FigmaDocumentParser {
   }
 
   /**
+   * Get the percents of fill variable usage in files
+   * @param processedNodes - array of nodes that have been processed
+   */
+  getFillVariablePercent(
+    processedNodes: AggregateCounts[],
+    opts?: AdoptionCalculationOptions
+  ): LintCheckPercent {
+    return getLintCheckPercent("Fill-Variable", processedNodes, {
+      includePartials: opts?.includePartialVariables || false,
+    });
+  }
+
+  /**
    * Get a breakdown of adoption percentages by team and project and how they rollup
    * @param allPages - a set of page details and figma file details with processed nodes
    */
@@ -854,7 +867,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
                     [page.pageAggregates],
                     opts
                   ),
-                  "Fill-Style": this.getFillStylePercent(
+                  "Fill-Variable": this.getFillVariablePercent(
                     [page.pageAggregates],
                     opts
                   ),
@@ -874,7 +887,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
                 allProjectProcessedNodes,
                 opts
               ),
-              "Fill-Style": this.getFillStylePercent(
+              "Fill-Variable": this.getFillVariablePercent(
                 allProjectProcessedNodes,
                 opts
               ),
@@ -891,7 +904,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
           adoptionPercent: this.getAdoptionPercent(teamProcessedNodes, opts),
           lintPercentages: {
             "Text-Style": this.getTextStylePercentage(teamProcessedNodes, opts),
-            "Fill-Style": this.getFillStylePercent(teamProcessedNodes, opts),
+            "Fill-Variable": this.getFillVariablePercent(teamProcessedNodes, opts)
           },
         };
         allProcessedNodes = allProcessedNodes.concat(teamProcessedNodes);
@@ -902,7 +915,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
         adoptionPercent: this.getAdoptionPercent(allProcessedNodes, opts),
         lintPercentages: {
           "Text-Style": this.getTextStylePercentage(allProcessedNodes, opts),
-          "Fill-Style": this.getFillStylePercent(allProcessedNodes, opts),
+          "Fill-Variable": this.getFillVariablePercent(allProcessedNodes, opts)
         },
       };
 
