@@ -323,36 +323,32 @@ export class FigmaCalculator extends FigmaDocumentParser {
     nonHiddenNodes: BaseNode[];
     numHiddenLayers: number;
   } {
-    let allHiddenNodes: string[] = [];
+    const allNodeIds = new Set(nodes.map((n) => n.id)); // :PERFORMANCE: precomputed IDs
+    const allHiddenNodes = new Set<string>();
     const hiddenParentNodes: string[] = [];
 
     nodes.forEach((node) => {
-      if (
-        (node as FrameNode).visible === false &&
-        !allHiddenNodes.includes(node.id)
-      ) {
+      if ((node as FrameNode).visible === false && !allHiddenNodes.has(node.id)) {
         hiddenParentNodes.push(node.id);
-        // add all of the children as hidden nodes
-        const subNodes = FigmaDocumentParser.FindAll(node, () => true);
-        allHiddenNodes.push(node.id);
-        subNodes.forEach((n) => allHiddenNodes.push(n.id));
+
+        // Add the parent itself to the list of hidden nodes
+        allHiddenNodes.add(node.id);
+
+        // Also add all of the children as ignored nodes,
+        // only if they exist in the passed-in nodes array
+        // to prevent adding nodes that are not part of the original set
+        // Use the precomputed allNodeIds for faster membership check
+        const subNodes = FigmaDocumentParser.FindAll(node, (n) => allNodeIds.has(n.id));
+        subNodes.forEach((n) => allHiddenNodes.add(n.id));
       }
     });
 
-    // we do our filtering on the second run because the order of nodes is unknown,
-    // and a child may appear before the parent
-    const nonHiddenNodes = nodes.filter((n) => {
-      // if the node is hidden, then toss it out
-      if (allHiddenNodes.includes(n.id)) {
-        return false;
-      }
-      return true;
-    });
+    const nonHiddenNodes = nodes.filter((n) => !allHiddenNodes.has(n.id));
 
     return {
       hiddenParentNodes,
       nonHiddenNodes,
-      numHiddenLayers: allHiddenNodes.length,
+      numHiddenLayers: allHiddenNodes.size,
     };
   }
 
@@ -364,39 +360,37 @@ export class FigmaCalculator extends FigmaDocumentParser {
     nonIgnoredNodes: BaseNode[];
     numIgnoredLayers: number;
   } {
-    let allIgnoredNodes: string[] = [];
+    const allNodeIds = new Set(nodes.map((n) => n.id)); // :PERFORMANCE: precomputed IDs
+    const allIgnoredNodes = new Set<string>();
     const ignoredParentInstanceIds: string[] = [];
 
     nodes.forEach((node) => {
-      if (node.type === "INSTANCE" && !allIgnoredNodes.includes(node.id)) {
+      if (node.type === "INSTANCE" && !allIgnoredNodes.has(node.id)) {
         // REST API has componentId, Plugin API uses mainComponent.key
-        const componentKey =
-          (node as any).componentId || node.mainComponent?.key;
+        const componentKey = (node as any).componentId || node.mainComponent?.key;
 
         if (componentKey && ignoredComponentKeys.includes(componentKey)) {
           ignoredParentInstanceIds.push(node.id);
-          // add all of the children as ignored nodes
-          const subNodes = FigmaDocumentParser.FindAll(node, () => true);
-          allIgnoredNodes.push(node.id);
-          subNodes.forEach((n) => allIgnoredNodes.push(n.id));
+
+          // Add the parent itself to the list of ignored nodes
+          allIgnoredNodes.add(node.id);
+
+          // Also add all of the children as ignored nodes,
+          // only if they exist in the passed-in nodes array
+          // to prevent adding nodes that are not part of the original set
+          // Use the precomputed allNodeIds for faster membership check
+          const subNodes = FigmaDocumentParser.FindAll(node, (n) => allNodeIds.has(n.id));
+          subNodes.forEach((n) => allIgnoredNodes.add(n.id));
         }
       }
     });
 
-    // we do our filtering on the second run because the order of nodes is unknown,
-    // and a child may appear before the parent
-    const nonIgnoredNodes = nodes.filter((n) => {
-      // if the node is ignored, then toss it out
-      if (allIgnoredNodes.includes(n.id)) {
-        return false;
-      }
-      return true;
-    });
+    const nonIgnoredNodes = nodes.filter((n) => !allIgnoredNodes.has(n.id));
 
     return {
       ignoredParentInstanceIds,
       nonIgnoredNodes,
-      numIgnoredLayers: allIgnoredNodes.length,
+      numIgnoredLayers: allIgnoredNodes.size,
     };
   }
 
@@ -749,6 +743,9 @@ export class FigmaCalculator extends FigmaDocumentParser {
         allTotals.totalMatchingText += checks["Text-Style"].partial;
       }
     }
+
+    // If there are no nodes on the page, return 0% adoption
+    if (allTotals.totalNodesOnPage === 0) return 0;
 
     const adoptionPercent = makePercent(
       (allTotals.totalNodesInLibrary + allTotals.totalMatchingText) /
