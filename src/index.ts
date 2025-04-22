@@ -750,6 +750,9 @@ export class FigmaCalculator extends FigmaDocumentParser {
       }
     }
 
+    // If there are no nodes on the page, return 0% adoption
+    if (allTotals.totalNodesOnPage === 0) return 0;
+
     const adoptionPercent = makePercent(
       (allTotals.totalNodesInLibrary + allTotals.totalMatchingText) /
         allTotals.totalNodesOnPage
