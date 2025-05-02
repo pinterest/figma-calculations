@@ -798,6 +798,19 @@ export class FigmaCalculator extends FigmaDocumentParser {
   }
 
   /**
+   * Get the percents of stroke fill variable usage in files
+   * @param processedNodes - array of nodes that have been processed
+   */
+  getStrokeFillVariablePercent(
+    processedNodes: AggregateCounts[],
+    opts?: AdoptionCalculationOptions
+  ): LintCheckPercent {
+    return getLintCheckPercent("Stroke-Fill-Variable", processedNodes, {
+      includePartials: opts?.includePartialVariables || false,
+    });
+  }
+
+  /**
    * Get a breakdown of adoption percentages by team and project and how they rollup
    * @param allPages - a set of page details and figma file details with processed nodes
    */
@@ -871,6 +884,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
                     [page.pageAggregates],
                     opts
                   ),
+                  "Stroke-Fill-Variable": this.getStrokeFillVariablePercent(
+                    [page.pageAggregates],
+                    opts
+                  ),
                 },
               };
             }),
@@ -891,6 +908,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
                 allProjectProcessedNodes,
                 opts
               ),
+              "Stroke-Fill-Variable": this.getStrokeFillVariablePercent(
+                allProjectProcessedNodes,
+                opts
+              ),
             },
           };
 
@@ -904,7 +925,8 @@ export class FigmaCalculator extends FigmaDocumentParser {
           adoptionPercent: this.getAdoptionPercent(teamProcessedNodes, opts),
           lintPercentages: {
             "Text-Style": this.getTextStylePercentage(teamProcessedNodes, opts),
-            "Fill-Variable": this.getFillVariablePercent(teamProcessedNodes, opts)
+            "Fill-Variable": this.getFillVariablePercent(teamProcessedNodes, opts),
+            "Stroke-Fill-Variable": this.getStrokeFillVariablePercent(teamProcessedNodes, opts),
           },
         };
         allProcessedNodes = allProcessedNodes.concat(teamProcessedNodes);
@@ -915,7 +937,8 @@ export class FigmaCalculator extends FigmaDocumentParser {
         adoptionPercent: this.getAdoptionPercent(allProcessedNodes, opts),
         lintPercentages: {
           "Text-Style": this.getTextStylePercentage(allProcessedNodes, opts),
-          "Fill-Variable": this.getFillVariablePercent(allProcessedNodes, opts)
+          "Fill-Variable": this.getFillVariablePercent(allProcessedNodes, opts),
+          "Stroke-Fill-Variable": this.getStrokeFillVariablePercent(allProcessedNodes, opts),
         },
       };
 
