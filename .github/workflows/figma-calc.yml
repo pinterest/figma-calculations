@@ -1,0 +1,123 @@
+name: Weekly Figma Calculation
+
+on:
+  schedule:
+    # Run every Monday at 2:00 AM
+    - cron: '0 2 * * 1'
+  # Enable manual triggering
+  workflow_dispatch:
+    inputs:
+      target_repo:
+        description: 'Target repository to push to (format: owner/repo)'
+        required: false
+        default: 'hoshki-ic/test-repo'
+      target_path:
+        description: 'Path within target repository'
+        required: false
+        default: 'test-output'
+      test_mode:
+        description: 'Run in test mode'
+        type: boolean
+        required: false
+        default: true
+  # Test trigger
+  push:
+    branches:
+      - test-automation
+
+jobs:
+  run-calculations:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Run example script
+        env:
+          FIGMA_API_TOKEN: ${{ secrets.FIGMA_API_TOKEN }}
+          FIGMA_STYLE_TEAM_ID: ${{ secrets.FIGMA_STYLE_TEAM_ID }}
+          FIGMA_TEAM_IDS: ${{ secrets.FIGMA_TEAM_IDS }}
+          FIGMA_DESIGN_SYSTEM_FILE_KEY: ${{ secrets.FIGMA_DESIGN_SYSTEM_FILE_KEY }}
+        run: node ./dist/examples/allfiles.js
+
+      - name: Set target repository
+        id: target_repo
+        run: |
+          # Set default values (using test repo for now)
+          TARGET_REPO="${{ github.event.inputs.target_repo || 'hoshki-ic/test-repo' }}"
+          TARGET_PATH="${{ github.event.inputs.target_path || 'test-output' }}"
+
+          # If triggered by push to test-automation branch, use test repository
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/test-automation" ]]; then
+            TARGET_REPO="${{ secrets.TEST_TARGET_REPO || 'hoshki-ic/test-repo' }}"
+            TARGET_PATH="${{ secrets.TEST_TARGET_PATH || 'test-output' }}"
+            echo "Running in test mode due to push to test-automation branch"
+          fi
+
+          # If test_mode input is true, use test repository
+          if [[ "${{ github.event.inputs.test_mode }}" == "true" ]]; then
+            TARGET_REPO="${{ secrets.TEST_TARGET_REPO || 'hoshki-ic/test-repo' }}"
+            TARGET_PATH="${{ secrets.TEST_TARGET_PATH || 'test-output' }}"
+            echo "Running in test mode due to workflow_dispatch input"
+          fi
+
+          echo "repo=$TARGET_REPO" >> $GITHUB_OUTPUT
+          echo "path=$TARGET_PATH" >> $GITHUB_OUTPUT
+
+      # Add a step to create test file if none exists (for testing only)
+      - name: Create test data file if none exists
+        run: |
+          if ! ls -t ./team-breakdown-ready-for-dev-*.json 1> /dev/null 2>&1; then
+            echo "No team breakdown files found. Creating a sample file for testing."
+            echo '{"test":"data"}' > ./team-breakdown-ready-for-dev-test.json
+          fi
+
+      - name: Debug settings
+        run: |
+          echo "Target Repository: ${{ steps.target_repo.outputs.repo }}"
+          echo "Target Path: ${{ steps.target_repo.outputs.path }}"
+
+      - name: Checkout target repository
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ steps.target_repo.outputs.repo }}
+          path: target-repo
+          token: ${{ secrets.TARGET_REPO_PAT }}
+
+      - name: Copy JSON files to target repository
+        run: |
+          # Get the most recent team breakdown file
+          TEAM_BREAKDOWN_FILE=$(ls -t ./team-breakdown-ready-for-dev-*.json | head -1)
+
+          # Copy the file to the target location
+          mkdir -p "target-repo/${{ steps.target_repo.outputs.path }}"
+          cp "$TEAM_BREAKDOWN_FILE" "target-repo/${{ steps.target_repo.outputs.path }}/figma-adoption-data.json"
+
+      - name: Commit and push to target repository
+        run: |
+          cd target-repo
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+
+          git add "${{ steps.target_repo.outputs.path }}/figma-adoption-data.json"
+
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update Figma adoption data [automated]"
+            git push
+          fi
