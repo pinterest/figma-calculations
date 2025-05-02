@@ -293,17 +293,36 @@ export class FigmaAPIHelper {
   }
 
   static async getNodeDetails(fileKey: string, nodeIds: string[]) {
-    const resp = await axios.get(`${BASE_URL}/files/${fileKey}/nodes`, {
-      headers: {
-        "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-      },
-      params: {
-        ids: nodeIds.join(","),
-      },
-    });
-    const data = resp.data as { nodes: { [key: string]: any } };
+    // Chunk nodeIds into groups of at most 500 to avoid exceeding an undocumented API limit
+    // that returns a 413 error (Request Entity Too Large) when we get up in the 900 node id range
+    const chunkSize = 500;
+    const chunks: string[][] = [];
+    for (let i = 0; i < nodeIds.length; i += chunkSize) {
+      chunks.push(nodeIds.slice(i, i + chunkSize));
+    }
 
-    return data;
+    // Map each chunk to a request
+    const requests = chunks.map(chunk =>
+      axios.get(`${BASE_URL}/files/${fileKey}/nodes`, {
+        headers: {
+          "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
+        },
+        params: {
+          ids: chunk.join(","),
+          depth: 1, // This method is only used to populate styles currently, and those don't have children
+        },
+      })
+    );
+
+    // Await all requests and merge the nodes objects
+    const responses = await Promise.all(requests);
+    let mergedNodes: { [key: string]: any } = {};
+    responses.forEach(resp => {
+      const data = resp.data as { nodes: { [key: string]: any } };
+      mergedNodes = { ...mergedNodes, ...data.nodes };
+    });
+
+    return { nodes: mergedNodes };
   }
 
   /**
