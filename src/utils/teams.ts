@@ -5,6 +5,9 @@ import { FigmaPartialFile } from "../models/figma";
 import { FigmaAPIHelper } from "../webapi";
 import wait from "./wait";
 
+// Project IDs to exclude due to permission issues
+const EXCLUDED_PROJECTS = process.env.FIGMA_EXCLUDED_PROJECT_IDS?.split(",").filter(Boolean) || [];
+
 /**
  * Get all the figma file metadata across entire organization for given teams
  * @param teamIds - the team ids to load files from
@@ -24,12 +27,23 @@ export async function getFigmaPagesForTeam(
   const files: FigmaPartialFile[] = [];
   for (const team of projectDetails) {
     for (const proj of team.projects) {
-      const newFiles = await FigmaAPIHelper.getProjectFiles(proj.id);
-      for (const file of newFiles) {
-        // merge the team and project names onto the file metadata
-        files.push(
-          Object.assign(file, { teamName: team.name, projectName: proj.name })
-        );
+      // Skip excluded projects
+      if (EXCLUDED_PROJECTS.includes(proj.id)) {
+        console.log(`Skipping project ${proj.id} (${proj.name || "unknown"}) due to known permission issues`);
+        continue;
+      }
+
+      try {
+        const newFiles = await FigmaAPIHelper.getProjectFiles(proj.id);
+        for (const file of newFiles) {
+          // merge the team and project names onto the file metadata
+          files.push(
+            Object.assign(file, { teamName: team.name, projectName: proj.name })
+          );
+        }
+      } catch (error: any) {
+        console.error(`Error fetching files for project ${proj.id}: ${error.message || error}`);
+        // Continue with the next project instead of crashing
       }
     }
   }
@@ -50,21 +64,27 @@ export async function getFigmaPagesForTeam(
       if (numFiles % 120 === 0) {
         await wait(60000);
       }
-      //console.debug(`Fetching file ${numFiles} of ${files.length}`);
-      let versions = await FigmaAPIHelper.getFileHistory(file.key);
 
-      versions = versions.filter((v) => v.user.handle !== "Figma System");
+      try {
+        //console.debug(`Fetching file ${numFiles} of ${files.length}`);
+        let versions = await FigmaAPIHelper.getFileHistory(file.key);
 
-      // sort with the version created time
-      // use that as the latest version
-      versions.sort((a, b) =>
-        dayjs(a.created_at).isBefore(dayjs(b.created_at)) ? 1 : -1
-      );
+        versions = versions.filter((v) => v.user.handle !== "Figma System");
 
-      if (versions.length > 0) {
-        const latestDate = versions[0].created_at;
-        // use the last file version date
-        file.last_modified = latestDate;
+        // sort with the version created time
+        // use that as the latest version
+        versions.sort((a, b) =>
+          dayjs(a.created_at).isBefore(dayjs(b.created_at)) ? 1 : -1
+        );
+
+        if (versions.length > 0) {
+          const latestDate = versions[0].created_at;
+          // use the last file version date
+          file.last_modified = latestDate;
+        }
+      } catch (error: any) {
+        console.error(`Error fetching version history for file ${file.key}: ${error.message || error}`);
+        // Continue with the next file
       }
     }
   }
