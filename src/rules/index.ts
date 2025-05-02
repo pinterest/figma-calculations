@@ -327,11 +327,7 @@ export function getStyleLookupKey(
 export function generateStyleLookup(styleBucket: StyleBucket) {
   const styleLookupMap: StyleLookupMap = {};
 
-  const addStyleToValueMap = (
-    type: FigmaStyleType,
-    styleValue: string,
-    style: FigmaTeamStyle
-  ) => {
+  const addStyleToValueMap = (type: FigmaStyleType, styleValue: string, style: FigmaTeamStyle) => {
     if (!styleLookupMap[type]) {
       styleLookupMap[type] = {};
     }
@@ -343,51 +339,16 @@ export function generateStyleLookup(styleBucket: StyleBucket) {
     styleLookupMap[type][styleValue].push(style);
   };
 
-  for (const type of Object.keys(styleBucket)) {
+  for (const [type, stylesMap] of Object.entries(styleBucket)) {
     const checks = getStyleLookupDefinitions(type as FigmaStyleType);
+    if (!checks) continue;
 
-    for (const styleKey of Object.keys(styleBucket[type])) {
-      const style = styleBucket[type][styleKey];
-
-      if (checks) {
-        // dynamic key from the definition
-        const key = getStyleLookupKey(checks, style.nodeDetails, "styleNode");
-
-        if (key) {
-          addStyleToValueMap(type as FigmaStyleType, key, style);
-        }
+    for (const style of Object.values(stylesMap)) {
+      const key = getStyleLookupKey(checks, style.nodeDetails, "styleNode");
+      if (key) {
+        addStyleToValueMap(type as FigmaStyleType, key, style);
       }
     }
-    /*switch (type) {
-        case "TEXT":
-          {
-            // use the font name
-            const styleValue = jp.value(
-              style.nodeDetails,
-              "$.style.fontFamily"
-            );
-            if (styleValue) {
-              addStyleToValueMap(type, styleValue, style);
-            }
-          }
-          break;
-        case "FILL":
-          {
-            // use the fill hex code - no alpha channel
-
-            const styleValue = jp.value(style.nodeDetails, "$.fills[0].color");
-            if (styleValue) {
-              // color is a {r, g,b} obj
-              const hex = figmaRGBToHex(
-                styleValue.r,
-                styleValue.g,
-                styleValue.b
-              );
-              addStyleToValueMap(type, hex, style);
-            }
-          }
-          break;
-      }*/
   }
 
   return styleLookupMap;
