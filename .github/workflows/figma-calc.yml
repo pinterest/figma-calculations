@@ -20,6 +20,11 @@ on:
         type: boolean
         required: false
         default: true
+      use_real_data:
+        description: 'Use real Figma data instead of test data'
+        type: boolean
+        required: false
+        default: false
   # Test trigger
   push:
     branches:
@@ -64,8 +69,9 @@ jobs:
           echo "Checking examples directory:"
           ls -la dist/examples || echo "dist/examples directory not found"
 
-      # Create a test file to use, since we're just testing the workflow
+      # Only create the mock script if not using real data
       - name: Create test data file
+        if: ${{ github.event.inputs.use_real_data != 'true' }}
         run: |
           echo "Creating test data file..."
           mkdir -p dist/examples
@@ -74,13 +80,31 @@ jobs:
           echo "Content of test script:"
           cat dist/examples/allfiles.js
 
-      - name: Run example script
-        env:
-          FIGMA_API_TOKEN: ${{ secrets.FIGMA_API_TOKEN }}
-          FIGMA_STYLE_TEAM_ID: ${{ secrets.FIGMA_STYLE_TEAM_ID }}
-          FIGMA_TEAM_IDS: ${{ secrets.FIGMA_TEAM_IDS }}
-          FIGMA_DESIGN_SYSTEM_FILE_KEY: ${{ secrets.FIGMA_DESIGN_SYSTEM_FILE_KEY }}
-        run: node ./dist/examples/allfiles.js
+      # Create a .env file with the secrets
+      - name: Create .env file
+        if: ${{ github.event.inputs.use_real_data == 'true' }}
+        run: |
+          echo "Creating .env file with secrets..."
+          echo "FIGMA_API_TOKEN=${{ secrets.FIGMA_API_TOKEN }}" > .env
+          echo "FIGMA_STYLE_TEAM_ID=${{ secrets.FIGMA_STYLE_TEAM_ID }}" >> .env
+          echo "FIGMA_TEAM_IDS=${{ secrets.FIGMA_TEAM_IDS }}" >> .env
+          echo "FIGMA_DESIGN_SYSTEM_FILE_KEY=${{ secrets.FIGMA_DESIGN_SYSTEM_FILE_KEY }}" >> .env
+          echo ".env file created (contents hidden for security)"
+
+      # Run the real calculation script if use_real_data is true
+      - name: Run real Figma calculations
+        if: ${{ github.event.inputs.use_real_data == 'true' }}
+        run: |
+          echo "Running real Figma calculations script..."
+          # Use npm run example instead of directly calling node
+          npm run example
+
+      # Run the mock script if not using real data
+      - name: Run mock script
+        if: ${{ github.event.inputs.use_real_data != 'true' }}
+        run: |
+          echo "Running mock script..."
+          node ./dist/examples/allfiles.js
 
       - name: Set target repository
         id: target_repo
@@ -112,6 +136,7 @@ jobs:
           echo "Checking for output files..."
           ls -la .
           ls -la ./team-breakdown-ready-for-dev-*.json || echo "No team breakdown files found"
+          ls -la ./all-pages-*.json || echo "No all-pages files found"
 
       - name: Debug settings
         run: |
@@ -128,10 +153,15 @@ jobs:
       - name: Copy JSON files to target repository
         run: |
           # Get the most recent team breakdown file or use the test file
-          TEAM_BREAKDOWN_FILE=$(ls -t ./team-breakdown-ready-for-dev-*.json | head -1 || echo "not-found")
+          TEAM_BREAKDOWN_FILE=$(ls -t ./team-breakdown-ready-for-dev-*.json 2>/dev/null | head -1 || echo "not-found")
 
           if [ "$TEAM_BREAKDOWN_FILE" = "not-found" ]; then
-            echo "No team breakdown files found. Creating one now."
+            # Try with all-pages files
+            TEAM_BREAKDOWN_FILE=$(ls -t ./all-pages-*.json 2>/dev/null | head -1 || echo "not-found")
+          fi
+
+          if [ "$TEAM_BREAKDOWN_FILE" = "not-found" ]; then
+            echo "No output files found. Creating one now."
             echo '{"test":"data","created":"through-workflow"}' > team-breakdown-ready-for-dev-test.json
             TEAM_BREAKDOWN_FILE="team-breakdown-ready-for-dev-test.json"
           fi
