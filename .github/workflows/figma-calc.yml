@@ -48,6 +48,13 @@ jobs:
         run: |
           ls -la
           ls -la src || echo "src directory not found"
+          ls -la src/examples || echo "src/examples directory not found"
+
+      - name: Show file contents
+        run: |
+          echo "Content of src/examples/allfiles.ts:"
+          cat src/examples/allfiles.ts
+          echo "================="
 
       - name: Install dependencies
         run: npm ci
@@ -56,8 +63,24 @@ jobs:
         run: |
           echo "Content of tsconfig.build.json:"
           cat tsconfig.build.json
+          echo "================="
           echo "Content of tsconfig.json:"
           cat tsconfig.json || echo "tsconfig.json not found"
+          echo "================="
+          echo "Content of package.json scripts:"
+          grep -A 15 "\"scripts\"" package.json
+
+      # Try compiling TypeScript separately for debugging
+      - name: Compile TypeScript directly
+        if: ${{ github.event.inputs.use_real_data == 'true' }}
+        run: |
+          echo "Running tsc directly..."
+          npx tsc
+          echo "TypeScript compilation completed"
+          echo "Checking dist directory:"
+          ls -la dist || echo "dist directory not found"
+          echo "Checking examples directory:"
+          ls -la dist/examples || echo "dist/examples directory not found"
 
       - name: Build project with debug
         run: |
@@ -68,6 +91,28 @@ jobs:
           ls -la dist || echo "dist directory not found"
           echo "Checking examples directory:"
           ls -la dist/examples || echo "dist/examples directory not found"
+
+      - name: Fix TypeScript Output
+        if: ${{ github.event.inputs.use_real_data == 'true' }}
+        run: |
+          echo "Ensuring examples directory exists..."
+          mkdir -p dist/examples
+
+          echo "Checking if original files exist..."
+          ls -la src/examples
+
+          echo "Copying examples files directly..."
+          cp -r src/examples/* dist/examples/
+
+          echo "Making TypeScript changes to JavaScript..."
+          for file in dist/examples/*.ts; do
+            if [ -f "$file" ]; then
+              mv "$file" "${file%.ts}.js"
+            fi
+          done
+
+          echo "Checking the results:"
+          ls -la dist/examples
 
       # Only create the mock script if not using real data
       - name: Create test data file
@@ -96,8 +141,8 @@ jobs:
         if: ${{ github.event.inputs.use_real_data == 'true' }}
         run: |
           echo "Running real Figma calculations script..."
-          # Use npm run example instead of directly calling node
-          npm run example
+          # Run node directly instead of npm run example to avoid the tsc step
+          node ./dist/examples/allfiles.js
 
       # Run the mock script if not using real data
       - name: Run mock script
