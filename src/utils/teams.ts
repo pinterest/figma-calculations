@@ -6,7 +6,7 @@ import { FigmaAPIHelper } from "../webapi";
 import wait from "./wait";
 
 // Project IDs to exclude due to permission issues
-const EXCLUDED_PROJECT_IDS = ["347402427", "291760637", "344793437"];
+const EXCLUDED_PROJECTS = process.env.FIGMA_EXCLUDED_PROJECT_IDS?.split(",").filter(Boolean) || [];
 
 /**
  * Get all the figma file metadata across entire organization for given teams
@@ -28,7 +28,7 @@ export async function getFigmaPagesForTeam(
   for (const team of projectDetails) {
     for (const proj of team.projects) {
       // Skip excluded projects
-      if (EXCLUDED_PROJECT_IDS.includes(proj.id)) {
+      if (EXCLUDED_PROJECTS.includes(proj.id)) {
         console.log(`Skipping project ${proj.id} (${proj.name || "unknown"}) due to known permission issues`);
         continue;
       }
