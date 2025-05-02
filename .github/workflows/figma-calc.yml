@@ -44,265 +44,65 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - name: List files before install
-        run: |
-          ls -la
-          ls -la src || echo "src directory not found"
-          ls -la src/examples || echo "src/examples directory not found"
-
-      - name: Show file contents
-        run: |
-          echo "Content of src/examples/allfiles.ts:"
-          cat src/examples/allfiles.ts
-          echo "================="
-
       - name: Install dependencies
         run: npm ci
 
-      - name: Check TSConfig
-        run: |
-          echo "Content of tsconfig.build.json:"
-          cat tsconfig.build.json
-          echo "================="
-          echo "Content of tsconfig.json:"
-          cat tsconfig.json || echo "tsconfig.json not found"
-          echo "================="
-          echo "Content of package.json scripts:"
-          grep -A 15 "\"scripts\"" package.json
+      - name: Build project
+        run: npm run build
 
-      # Try compiling TypeScript separately for debugging
-      - name: Compile TypeScript directly
+      # Create a custom tsconfig for examples that outputs CommonJS
+      - name: Create examples tsconfig
         if: ${{ github.event.inputs.use_real_data == 'true' }}
         run: |
-          echo "Running tsc directly..."
-          npx tsc
-          echo "TypeScript compilation completed"
-          echo "Checking dist directory:"
-          ls -la dist || echo "dist directory not found"
-          echo "Checking examples directory:"
-          ls -la dist/examples || echo "dist/examples directory not found"
-
-      - name: Build project with debug
-        run: |
-          echo "Running build command..."
-          npm run build
-          echo "Build completed"
-          echo "Checking dist directory:"
-          ls -la dist || echo "dist directory not found"
-          echo "Checking examples directory:"
-          ls -la dist/examples || echo "dist/examples directory not found"
-
-      # Create a script compatible with CommonJS for the real data approach
-      - name: Create CommonJS compatible script
-        if: ${{ github.event.inputs.use_real_data == 'true' }}
-        run: |
-          echo "Creating CommonJS compatible script..."
-          mkdir -p dist/examples
-
-          # Create a CommonJS version of the script
-          cat > dist/examples/allfiles.js << 'EOF'
-          // CommonJS version of the script
-          const dotenv = require("dotenv");
-          dotenv.config();
-
-          const fs = require("fs");
-          const { FigmaCalculator } = require("../index");
-
-          const figmaCalculator = new FigmaCalculator();
-
-          const STYLE_TEAM_ID = process.env.FIGMA_STYLE_TEAM_ID || "";
-          const TEAM_IDS = process.env.FIGMA_TEAM_IDS?.split(",").filter(Boolean) || [];
-          const DESIGN_SYSTEM_FILE_KEY = process.env.FIGMA_DESIGN_SYSTEM_FILE_KEY || "";
-
-          const FIGMA_TOKEN = process.env.FIGMA_API_TOKEN || "";
-
-          // Flag to control whether to only process ready-for-dev sections
-          const onlyTrackReadyForDev = true;
-
-          // used to fetch styles and components
-          figmaCalculator.setAPIToken(FIGMA_TOKEN);
-
-          const doWork = async () => {
-            let colorVariableCollectionIds = [];
-            try {
-              if (!DESIGN_SYSTEM_FILE_KEY) {
-                console.warn("No DESIGN_SYSTEM_FILE_KEY provided. Will not load variables.");
-              } else {
-                const designSystemVars = await figmaCalculator.loadLocalVariables(DESIGN_SYSTEM_FILE_KEY);
-
-                const idsPantryCollection = Object.values(designSystemVars.variableCollections)
-                  .find(collection => collection.name === "IDS Pantry Tokens");
-
-                if (idsPantryCollection) {
-                  colorVariableCollectionIds = [idsPantryCollection.id];
-                }
-              }
-            } catch (error) {
-              console.error("Error loading design system variables:", error);
-            }
-
-            // optional: if not in figma plugin environment, load a file with this
-            const { files } = await figmaCalculator.getFilesForTeams(TEAM_IDS, 4, false);
-
-            console.log("Total File Count:", files.length);
-
-            // load up any style libraries
-            const comps = await figmaCalculator.loadComponents(STYLE_TEAM_ID);
-            const styles = await figmaCalculator.loadStyles(STYLE_TEAM_ID);
-
-            const compsj = JSON.stringify(comps, null, 2);
-            const stylesj = JSON.stringify(styles, null, 2);
-            fs.writeFileSync("./comps.json", compsj);
-            fs.writeFileSync("./styles.json", stylesj);
-
-            const allPages = [];
-            let totalReadyForDevSections = 0;
-
-            for (let i = 0; i < files.length; i++) {
-              const file = files[i];
-              let fileReadyForDevSections = 0;
-
-              try {
-                await figmaCalculator.fetchCloudDocument(file.key);
-              } catch (ex) {
-                console.log(`Failed to fetch ${file.key}`);
-                continue;
-              }
-
-              console.log(`Processing file ${i + 1} of ${files.length}`);
-
-              // For testing in GitHub Actions, only process a couple of files
-              if (i >= 2 && process.env.GITHUB_ACTIONS) {
-                console.log("Limiting to just 2 files for GitHub Actions testing");
-                break;
-              }
-
-              // run through all of the pages and process them
-              if (onlyTrackReadyForDev) {
-                for (const page of figmaCalculator.getAllPages()) {
-                  // Use FindAll to recursively find all READY_FOR_DEV nodes
-                  const readyForDevNodes = FigmaCalculator.FindAll(page, (node) =>
-                    (node.devStatus?.type === 'READY_FOR_DEV')
-                  );
-
-                  fileReadyForDevSections += readyForDevNodes.length;
-
-                  if (readyForDevNodes.length > 0) {
-                    console.log(`Found ${readyForDevNodes.length} ready for dev nodes in page "${page.name}"`);
-                  }
-
-                  for (const node of readyForDevNodes) {
-                    console.log('Ready for dev node:', {
-                      type: node.type,
-                      name: node.name,
-                      id: node.id,
-                      devStatus: node.devStatus,
-                      description: node.devStatus?.description
-                    });
-                    const processedNodes = figmaCalculator.processTree(node, {
-                      colorVariableCollectionIds: colorVariableCollectionIds
-                    });
-                    const pageDetails = {
-                      file,
-                      pageAggregates: processedNodes.aggregateCounts,
-                      pageName: page.name,
-                    };
-                    allPages.push(pageDetails);
-                  }
-                }
-              } else {
-                for (const page of figmaCalculator.getAllPages()) {
-                  console.log('Processing entire page');
-                  const processedNodes = figmaCalculator.processTree(page, {
-                    colorVariableCollectionIds: colorVariableCollectionIds
-                  });
-                  const pageDetails = {
-                    file,
-                    pageAggregates: processedNodes.aggregateCounts,
-                    pageName: page.name,
-                  };
-                  allPages.push(pageDetails);
-                }
-              }
-
-              if (onlyTrackReadyForDev) {
-                console.log(`File "${file.name} (${file.key})" has ${fileReadyForDevSections} ready for dev sections and frames`);
-                totalReadyForDevSections += fileReadyForDevSections;
-              }
-            }
-
-            if (onlyTrackReadyForDev) {
-              console.log(`\nTotal ready for dev sections across all files: ${totalReadyForDevSections}`);
-            }
-
-            // write all pages to disk in case something goes wrong, so we don't have to reload everything again
-            const allPagesJson = JSON.stringify(allPages, null, 2);
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const fileName = `./all-pages-${onlyTrackReadyForDev ? 'ready-for-dev' : 'all'}-${timestamp}.json`;
-            fs.writeFileSync(fileName, allPagesJson);
-
-            // Include partial variable matches in the breakdown
-            const teamBreakdown = figmaCalculator.getBreakDownByTeams(allPages, {
-              includePartialVariables: true
-            });
-            const teamBreakdownJson = JSON.stringify(teamBreakdown, null, 2);
-            const teamBreakdownFileName = `./team-breakdown-${onlyTrackReadyForDev ? 'ready-for-dev' : 'all'}-${timestamp}.json`;
-            fs.writeFileSync(teamBreakdownFileName, teamBreakdownJson);
-            console.log("Team Breakdown:", JSON.stringify(teamBreakdown, null, 2));
-          };
-
-          doWork().catch(err => {
-            console.error("Error in main script:", err);
-            // Create a fallback file for testing
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            fs.writeFileSync(`./team-breakdown-ready-for-dev-${timestamp}.json`, JSON.stringify({
-              "test": "data",
-              "error": "Script failed to complete",
-              "errorMessage": err.message
-            }, null, 2));
-          });
+          cat > tsconfig.examples.json << 'EOF'
+          {
+            "extends": "./tsconfig.json",
+            "compilerOptions": {
+              "module": "CommonJS",
+              "outDir": "./dist",
+              "rootDir": "./src"
+            },
+            "include": ["src/examples/**/*"]
+          }
           EOF
 
-          echo "Script created. Content:"
-          head -n 20 dist/examples/allfiles.js
-          echo "... (truncated for brevity)"
+      # Compile the examples separately with CommonJS output
+      - name: Compile examples
+        if: ${{ github.event.inputs.use_real_data == 'true' }}
+        run: |
+          npx tsc -p tsconfig.examples.json
+
+          if [ ! -f "dist/examples/allfiles.js" ]; then
+            mkdir -p dist/examples
+            echo 'console.log("Test script - compilation failed"); const fs = require("fs"); fs.writeFileSync("./team-breakdown-ready-for-dev-test.json", JSON.stringify({"test":"data","error":"compilation-failed"}));' > dist/examples/allfiles.js
+          fi
 
       # Only create the mock script if not using real data
       - name: Create test data file
         if: ${{ github.event.inputs.use_real_data != 'true' }}
         run: |
-          echo "Creating test data file..."
           mkdir -p dist/examples
           echo 'console.log("Test run completed successfully"); console.log({"test":"data"});' > dist/examples/allfiles.js
           echo 'console.log("Creating test output file..."); const fs = require("fs"); fs.writeFileSync("./team-breakdown-ready-for-dev-test.json", JSON.stringify({"test":"data"}));' >> dist/examples/allfiles.js
-          echo "Content of test script:"
-          cat dist/examples/allfiles.js
 
       # Create a .env file with the secrets
       - name: Create .env file
         if: ${{ github.event.inputs.use_real_data == 'true' }}
         run: |
-          echo "Creating .env file with secrets..."
           echo "FIGMA_API_TOKEN=${{ secrets.FIGMA_API_TOKEN }}" > .env
           echo "FIGMA_STYLE_TEAM_ID=${{ secrets.FIGMA_STYLE_TEAM_ID }}" >> .env
           echo "FIGMA_TEAM_IDS=${{ secrets.FIGMA_TEAM_IDS }}" >> .env
           echo "FIGMA_DESIGN_SYSTEM_FILE_KEY=${{ secrets.FIGMA_DESIGN_SYSTEM_FILE_KEY }}" >> .env
-          echo ".env file created (contents hidden for security)"
 
       # Run the real calculation script if use_real_data is true
       - name: Run real Figma calculations
         if: ${{ github.event.inputs.use_real_data == 'true' }}
-        run: |
-          echo "Running real Figma calculations script..."
-          # Run node directly instead of npm run example to avoid the tsc step
-          node ./dist/examples/allfiles.js || echo "Script failed but continuing workflow"
+        run: node ./dist/examples/allfiles.js || echo "Script failed but continuing workflow"
 
       # Run the mock script if not using real data
       - name: Run mock script
         if: ${{ github.event.inputs.use_real_data != 'true' }}
-        run: |
-          echo "Running mock script..."
-          node ./dist/examples/allfiles.js
+        run: node ./dist/examples/allfiles.js
 
       - name: Set target repository
         id: target_repo
@@ -315,14 +115,12 @@ jobs:
           if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/test-automation" ]]; then
             TARGET_REPO="${{ secrets.TEST_TARGET_REPO || 'hoshki-ic/test-repo' }}"
             TARGET_PATH="${{ secrets.TEST_TARGET_PATH || 'test-output' }}"
-            echo "Running in test mode due to push to test-automation branch"
           fi
 
           # If test_mode input is true, use test repository
           if [[ "${{ github.event.inputs.test_mode }}" == "true" ]]; then
             TARGET_REPO="${{ secrets.TEST_TARGET_REPO || 'hoshki-ic/test-repo' }}"
             TARGET_PATH="${{ secrets.TEST_TARGET_PATH || 'test-output' }}"
-            echo "Running in test mode due to workflow_dispatch input"
           fi
 
           echo "repo=$TARGET_REPO" >> $GITHUB_OUTPUT
@@ -331,15 +129,8 @@ jobs:
       # Verify test file exists
       - name: Check for output file
         run: |
-          echo "Checking for output files..."
-          ls -la .
-          ls -la ./team-breakdown-ready-for-dev-*.json || echo "No team breakdown files found"
-          ls -la ./all-pages-*.json || echo "No all-pages files found"
-
-      - name: Debug settings
-        run: |
-          echo "Target Repository: ${{ steps.target_repo.outputs.repo }}"
-          echo "Target Path: ${{ steps.target_repo.outputs.path }}"
+          ls -la ./team-breakdown-ready-for-dev-*.json 2>/dev/null || echo "No team breakdown files found"
+          ls -la ./all-pages-*.json 2>/dev/null || echo "No all-pages files found"
 
       - name: Checkout target repository
         uses: actions/checkout@v3
@@ -363,8 +154,6 @@ jobs:
             echo '{"test":"data","created":"through-workflow"}' > team-breakdown-ready-for-dev-test.json
             TEAM_BREAKDOWN_FILE="team-breakdown-ready-for-dev-test.json"
           fi
-
-          echo "Using file: $TEAM_BREAKDOWN_FILE"
 
           # Get current date for branch name and PR
           CURRENT_DATE=$(date +"%Y-%m-%d")
