@@ -25,7 +25,8 @@ type VariableModeValue = {
   value: VariableValue;
 };
 
-type VariableModeMap = Record<string, string>;
+// variableCollectionId: { modeId: modeName }
+type VariableModeMap = Record<string, Record<string, string>>;
 
 // Allow strictNullChecks to properly detect null filtering using a filter()
 const nonNullable = <T>(value: T): value is NonNullable<T> => {
@@ -172,11 +173,14 @@ export function resolveVariableValue(
 
 // Create a lookup map of mode ids to their names
 // Note: exporting for testing only
-export const createVariableModeNameMap = (variableCollections: FigmaLocalVariableCollections): VariableModeMap => {
-  return Object.values(variableCollections).reduce<Record<string, string>>((acc, { modes }) => {
-    modes.forEach(({ modeId, name }) => {
-      acc[modeId] = name;
-    });
+export const createVariableModeNameMap = (
+  variableCollections: FigmaLocalVariableCollections
+): VariableModeMap => {
+  return Object.entries(variableCollections).reduce<VariableModeMap>((acc, [collectionId, { modes }]) => {
+    acc[collectionId] = modes.reduce<Record<string, string>>((modeAcc, { modeId, name }) => {
+      modeAcc[modeId] = name;
+      return modeAcc;
+    }, {});
     return acc;
   }, {});
 };
@@ -204,7 +208,7 @@ export const createVariableMapVariable = (
     defaultModeId: variableCollectionDefaultModeId,
   } = variableCollection;
 
-  const modeName = variableModeNameMap[modeId];
+  const modeName = variableModeNameMap[variableCollectionId]?.[modeId];
   if (!modeName) return undefined;
 
   return {
