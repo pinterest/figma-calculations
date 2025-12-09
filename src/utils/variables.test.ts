@@ -106,10 +106,16 @@ describe("createVariableModeNameMap", () => {
     const map = createVariableModeNameMap(variableCollections);
 
     expect(map).toEqual({
-      "265:0": "Light",
-      "265:1": "Dark",
-      "7410:2": "Default",
-      "7410:3": "Default",
+      "VariableCollectionId:265:2989": {
+        "265:0": "Light",
+        "265:1": "Dark",
+      },
+      "VariableCollectionId:701:7994": {
+        "7410:2": "Default",
+      },
+      "VariableCollectionId:733:939": {
+        "7410:3": "Default",
+      },
     });
   });
 });
