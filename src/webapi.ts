@@ -228,6 +228,24 @@ export class FigmaAPIHelper {
     return components;
   }
 
+  static async getFileComponentSets(fileKeys: string[]): Promise<FigmaTeamComponent[]> {
+    let componentSets: FigmaTeamComponent[] = [];
+    for (const fileId of fileKeys) {
+      const resp = await axios.get(`${BASE_URL}/files/${fileId}/component_sets`, {
+        headers: {
+          "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
+        },
+      });
+      const data = resp.data as any;
+      if (!data.error && data.meta.component_sets) {
+        componentSets = componentSets.concat(
+          data.meta.component_sets as FigmaTeamComponent[]
+        );
+      }
+    }
+    return componentSets;
+  }
+
   static async getFileStyles(fileKeys: string[]): Promise<FigmaTeamStyle[]> {
     let styles: FigmaTeamStyle[] = [];
     for (const fileId of fileKeys) {
