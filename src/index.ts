@@ -170,12 +170,40 @@ export class FigmaCalculator extends FigmaDocumentParser {
   }
 
   /**
+   * Get all of the components and component sets from a list of file keys
+   * @param fileKeys - array of Figma file keys
+   * @returns Promise that resolves to an array of FigmaTeamComponent
+   */
+  async loadComponentsFromFiles(fileKeys: string[]): Promise<FigmaTeamComponent[]> {
+    if (!this.apiToken) throw new Error("No Figma API token provided");
+
+    const components = await FigmaAPIHelper.getFileComponents(fileKeys);
+    const componentSets = await FigmaAPIHelper.getFileComponentSets(fileKeys);
+    this.components = components.concat(componentSets);
+
+    return this.components;
+  }
+
+  /**
    * Load all of the valid styles from your library
    * @param teamId - the team id to load styles from
    */
   async loadStyles(teamId: string): Promise<FigmaTeamStyle[]> {
     if (!this.apiToken) throw new Error("No Figma API token provided");
     this.allStyles = await FigmaAPIHelper.getTeamStyles(teamId);
+    return this.allStyles;
+  }
+
+  /**
+   * Load styles from a list of file keys
+   * @param fileKeys - array of Figma file keys
+   * @returns Promise that resolves to an array of FigmaTeamStyle
+   */
+  async loadStylesFromFiles(fileKeys: string[]): Promise<FigmaTeamStyle[]> {
+    if (!this.apiToken) throw new Error("No Figma API token provided");
+
+    this.allStyles = await FigmaAPIHelper.getFileStyles(fileKeys);
+
     return this.allStyles;
   }
 
