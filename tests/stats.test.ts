@@ -56,7 +56,7 @@ describe("Do Test File Cases Pass?", () => {
     expect(pages.length).toBe(TOTAL_PAGES);
   });
 
-  it("Pass iOS and Web Handoff 100%", () => {
+  it("Pass iOS and Web Handoff 100%", async () => {
     const frameResults: { [pageName: string]: AggregateCounts[] } = {};
     for (const page of figmaCalculator.getAllPages()) {
       const frameNodes = FigmaCalculator.FindChildren(
@@ -67,7 +67,7 @@ describe("Do Test File Cases Pass?", () => {
       frameResults[page.name] = [];
 
       for (const node of frameNodes) {
-        const processedNodes = figmaCalculator.processTree(node, {
+        const processedNodes = await figmaCalculator.processTree(node, {
           onProcessNode: (node) => {
             /*
               Debug function to see output of runs
@@ -95,7 +95,7 @@ describe("Do Test File Cases Pass?", () => {
     ).toBe(100);
   });
 
-  it("Pass Hidden File Test to be 100%", () => {
+  it("Pass Hidden File Test to be 100%", async () => {
     const frameResults: { [pageName: string]: AggregateCounts[] } = {};
     for (const page of figmaCalculator.getAllPages()) {
       const frameNodes = FigmaCalculator.FindChildren(
@@ -106,7 +106,7 @@ describe("Do Test File Cases Pass?", () => {
       frameResults[page.name] = [];
 
       for (const node of frameNodes) {
-        const processedNodes = figmaCalculator.processTree(node);
+        const processedNodes = await figmaCalculator.processTree(node);
         frameResults[page.name].push(processedNodes.aggregateCounts);
       }
     }
@@ -121,7 +121,7 @@ describe("Do Test File Cases Pass?", () => {
     ).toBe(100);
   });
 
-  it("Pass iOS and Text Lint 100%", () => {
+  it("Pass iOS and Text Lint 100%", async () => {
     const frameResults: { [pageName: string]: AggregateCounts[] } = {};
     for (const page of figmaCalculator.getAllPages()) {
       const frameNodes = FigmaCalculator.FindChildren(
@@ -132,7 +132,7 @@ describe("Do Test File Cases Pass?", () => {
       frameResults[page.name] = [];
 
       for (const node of frameNodes) {
-        const processedNodes = figmaCalculator.processTree(node);
+        const processedNodes = await figmaCalculator.processTree(node);
         frameResults[page.name].push(processedNodes.aggregateCounts);
       }
     }

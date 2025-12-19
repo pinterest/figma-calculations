@@ -37,7 +37,7 @@ export const getHiddenNodes = (
   return [topLevelHiddenNode].concat(childrenNodes);
 };
 
-export function getProcessedNodes(
+export async function getProcessedNodes(
   rootNode: BaseNode,
   components: FigmaTeamComponent[],
   allStyles: FigmaTeamStyle[],
@@ -118,7 +118,7 @@ export function getProcessedNodes(
   let nonIgnoredNodes: BaseNode[] = allNodes;
   let numIgnoredLayers: number = 0;
   if (opts?.ignoredComponentKeys?.length) {
-    ({ nonIgnoredNodes, numIgnoredLayers } = FigmaCalculator.filterIgnoredComponentNodes(
+    ({ nonIgnoredNodes, numIgnoredLayers } = await FigmaCalculator.filterIgnoredComponentNodes(
       allNodes,
       opts.ignoredComponentKeys
     ));
@@ -130,7 +130,7 @@ export function getProcessedNodes(
 
   // toss any library nodes from the list
   const { nonLibraryNodes, numLibraryNodes, libraryNodes } =
-    FigmaCalculator.filterLibraryNodes(nonHiddenNonIgnoredNodes, {
+    await FigmaCalculator.filterLibraryNodes(nonHiddenNonIgnoredNodes, {
       components,
     });
 

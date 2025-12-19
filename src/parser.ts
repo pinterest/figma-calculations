@@ -84,10 +84,10 @@ export default class FigmaDocumentParser {
     return matches;
   }
 
-  static RemoveNode(root: BaseNode, nodeId: string) {
+  static async RemoveNode(root: BaseNode, nodeId: string) {
     // running in the figma context
     if (typeof figma !== undefined) {
-      const node = figma.getNodeById(nodeId);
+      const node = await figma.getNodeByIdAsync(nodeId);
       if (node) {
         node.remove();
       }
