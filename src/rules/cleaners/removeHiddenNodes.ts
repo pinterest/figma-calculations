@@ -5,7 +5,7 @@ export async function removeHiddenNodes(startNode: BaseNode) {
     startNode,
     (n) => n.visible === false
   );
-  for (var i = 0; i < hiddenNodes.length; i++) {
+  for (let i = 0; i < hiddenNodes.length; i++) {
     try {
       await FigmaCalculator.RemoveNode(startNode, hiddenNodes[i].id);
     } catch (e) {

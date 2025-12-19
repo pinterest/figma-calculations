@@ -19,7 +19,7 @@ export async function removeEmptyFramesAndGroups(startNode: BaseNode) {
     if (hasNoChildren && hasNoFills && hasNoFillStyle) {
       try {
         await FigmaCalculator.RemoveNode(startNode, frame.id);
-      } catch (e) {}
+      } catch (e) { /* empty */ }
     }
   }
 }

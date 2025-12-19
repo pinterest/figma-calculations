@@ -86,7 +86,7 @@ export default class FigmaDocumentParser {
 
   static async RemoveNode(root: BaseNode, nodeId: string) {
     // running in the figma context
-    if (typeof figma !== undefined) {
+    if (typeof figma !== "undefined") {
       const node = await figma.getNodeByIdAsync(nodeId);
       if (node) {
         node.remove();
