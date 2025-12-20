@@ -48,7 +48,7 @@ const doWork = async () => {
     // run through all of the pages and process them
     for (const page of figmaCalculator.getAllPages()) {
       // recursively run through and process the notes
-      const processedNodes = figmaCalculator.processTree(page);
+      const processedNodes = await figmaCalculator.processTree(page);
 
       // log out the text linting results and suggestions
       if (check.checkName === "Text-Style" && check.matchLevel === "Partial") {

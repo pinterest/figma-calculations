@@ -1,6 +1,6 @@
 import { FigmaCalculator } from "../..";
 
-export function removeEmptyFramesAndGroups(startNode: BaseNode) {
+export async function removeEmptyFramesAndGroups(startNode: BaseNode) {
   const frames = FigmaCalculator.FindAll(
     startNode,
     (n) => n.type === "FRAME" || n.type === "GROUP"
@@ -18,8 +18,8 @@ export function removeEmptyFramesAndGroups(startNode: BaseNode) {
 
     if (hasNoChildren && hasNoFills && hasNoFillStyle) {
       try {
-        FigmaCalculator.RemoveNode(startNode, frame.id);
-      } catch (e) {}
+        await FigmaCalculator.RemoveNode(startNode, frame.id);
+      } catch (e) { /* empty */ }
     }
   }
 }

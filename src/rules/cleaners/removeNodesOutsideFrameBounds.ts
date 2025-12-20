@@ -1,6 +1,6 @@
 import { FigmaCalculator } from "../..";
 
-export function removeNodesOutsideFrameBounds(startNode: BaseNode) {
+export async function removeNodesOutsideFrameBounds(startNode: BaseNode) {
   // only do this for top-level frames
   const nodes = FigmaCalculator.FindChildren(
     startNode,
@@ -43,7 +43,7 @@ export function removeNodesOutsideFrameBounds(startNode: BaseNode) {
 
     for (let k = 0; k < oobNodes.length; k++) {
       try {
-        FigmaCalculator.RemoveNode(startNode, oobNodes[k].id);
+        await FigmaCalculator.RemoveNode(startNode, oobNodes[k].id);
       } catch (e) {
         //console.log('Could not remove ' + hiddenNodes[i]);
       }

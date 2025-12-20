@@ -12,7 +12,7 @@ beforeAll(() => {
   // in the Figma PluginAPI context by checking that the typeof figma is not undefined.
   // So we'll mock that in global space so it sees something.
   //
-  // @ts-ignore: Mocking a global
+  // @ts-expect-error: Mocking a global
   global.figma = {
     apiVersion: '1.0.0'
   };
@@ -25,7 +25,7 @@ beforeAll(() => {
 });
 
 afterAll(() => {
-  // @ts-ignore: UnMocking a global
+  // @ts-expect-error: UnMocking a global
   delete global.figma;
 });
 

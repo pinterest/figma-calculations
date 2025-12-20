@@ -11,11 +11,11 @@ export {
 };
 
 export class LintCleaner {
-  static run(startNode: BaseNode) {
-    removeEmptyFramesAndGroups(startNode);
-    removeTransparentNodes(startNode);
-    // removeHiddenNodes(startNode);
-    // removeNodesOutsideFrameBounds(startNode);
+  static async run(startNode: BaseNode) {
+    await removeEmptyFramesAndGroups(startNode);
+    await removeTransparentNodes(startNode);
+    // await removeHiddenNodes(startNode);
+    // await removeNodesOutsideFrameBounds(startNode);
   }
 }
 

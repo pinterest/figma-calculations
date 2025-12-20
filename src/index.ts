@@ -380,22 +380,22 @@ export class FigmaCalculator extends FigmaDocumentParser {
     };
   }
 
-  static filterIgnoredComponentNodes(
+  static async filterIgnoredComponentNodes(
     nodes: BaseNode[],
     ignoredComponentKeys: string[]
-  ): {
+  ): Promise<{
     ignoredParentInstanceIds: string[];
     nonIgnoredNodes: BaseNode[];
     numIgnoredLayers: number;
-  } {
+  }> {
     const allNodeIds = new Set(nodes.map((n) => n.id)); // :PERFORMANCE: precomputed IDs
     const allIgnoredNodes = new Set<string>();
     const ignoredParentInstanceIds: string[] = [];
 
-    nodes.forEach((node) => {
+    for (const node of nodes) {
       if (node.type === "INSTANCE" && !allIgnoredNodes.has(node.id)) {
         // REST API has componentId, Plugin API uses mainComponent.key
-        const componentKey = (node as any).componentId || node.mainComponent?.key;
+        const componentKey = (node as any).componentId || (await node.getMainComponentAsync())?.key;
 
         if (componentKey && ignoredComponentKeys.includes(componentKey)) {
           ignoredParentInstanceIds.push(node.id);
@@ -411,7 +411,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
           subNodes.forEach((n) => allIgnoredNodes.add(n.id));
         }
       }
-    });
+    }
 
     const nonIgnoredNodes = nodes.filter((n) => !allIgnoredNodes.has(n.id));
 
@@ -429,16 +429,16 @@ export class FigmaCalculator extends FigmaDocumentParser {
    * @returns boolean
    * Looks at a set of node, and tosses out any nodes that belong to an instance node, and returns elements it finds
    */
-  static filterLibraryNodes(
+  static async filterLibraryNodes(
     nodes: BaseNode[],
     opts?: { components?: FigmaTeamComponent[] }
-  ): {
+  ): Promise<{
     libraryNodes: {
-      [nodeId: string]: { layers: string[]; name: string };
+      [nodeId: string]: { layers: string[]; name: string; };
     };
     nonLibraryNodes: BaseNode[];
     numLibraryNodes: number;
-  } {
+  }> {
     // run through the page
     if (!opts?.components)
       throw new Error("No components provided to filter out library nodes");
@@ -453,10 +453,10 @@ export class FigmaCalculator extends FigmaDocumentParser {
 
     // get the component's real name
     // check if a component has a mainComponent?
-    const isLibraryComponent = (instanceNode: any) => {
+    const isLibraryComponent = async (instanceNode: any) => {
       // if it's a web file, then check the componentId else the mainComponent property to get the key
       const componentKey =
-        instanceNode.componentId || instanceNode.mainComponent?.key;
+        instanceNode.componentId || (await instanceNode.getMainComponentAsync())?.key;
 
       if (!componentKey) {
         return false;
@@ -467,15 +467,15 @@ export class FigmaCalculator extends FigmaDocumentParser {
       return false;
     };
 
-    nodes.forEach((node) => {
-      if (node.type === "INSTANCE" && isLibraryComponent(node)) {
+    for (const node of nodes) {
+      if (node.type === "INSTANCE" && await isLibraryComponent(node)) {
         allLibraryNodes[node.id] = { layers: [], name: node.name };
 
         // note: this introduces hidden nodes as well (e.g. nodes that were not in the original set of nodes), hence the second pass
         const subNodes = FigmaDocumentParser.FindAll(node, () => true);
         subNodes.forEach((n) => allLibraryNodes[node.id].layers.push(n.id));
       }
-    });
+    }
 
     const nonLibraryNodes = nodes.filter((n) => {
       for (const key in allLibraryNodes) {
@@ -500,7 +500,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
    * @param rootNode - Can pass any Figma Node with children
    * @param useEmitter - Streams the results of the process to the emitter in intervals
    */
-  processTree(
+  async processTree(
     rootNode: BaseNode,
     opts: {
       components?: FigmaTeamComponent[];
@@ -511,7 +511,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
       variables?: FigmaLocalVariables;
       variableCollections?: FigmaLocalVariableCollections;
     } & ProcessedNodeOptions = {}
-  ): ProcessedNodeTree {
+  ): Promise<ProcessedNodeTree> {
     // Fallback to things we might already have loaded
     const {
       components = this.components,
@@ -530,7 +530,7 @@ export class FigmaCalculator extends FigmaDocumentParser {
       libraryNodes,
       totalNodes,
       processedNodes,
-    } = getProcessedNodes(
+    } = await getProcessedNodes(
       rootNode,
       components,
       allStyles,
