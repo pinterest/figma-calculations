@@ -55,7 +55,7 @@ const doWork = async () => {
 
     // run through all of the pages and process them
     for (const page of figmaCalculator.getAllPages()) {
-      const processedNodes = figmaCalculator.processTree(page, {
+      const processedNodes = await figmaCalculator.processTree(page, {
         onProcessNode: (node) => {
           for (const check of node.lintChecks) {
             // example: show the text linting results and suggestions

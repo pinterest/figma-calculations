@@ -1,5 +1,6 @@
 .editorconfig
 .github
+eslint.config.mjs
 jest.config.ts
 tsconfig.json
 tsconfig.build.json

@@ -25,7 +25,7 @@ export const isExactVariableMatch = (
         if (variableSubscribedId) {
           const variable = getVariableFromSubscribedId(variables, variableSubscribedId);
 
-          // const figmaLoadedVariable = figma.variables.getVariableById(variableId);
+          // const figmaLoadedVariable = await figma.variables.getVariableByIdAsync(variableId);
           // console.log("Got figma loaded variable:", figmaLoadedVariable);
 
           if (

@@ -97,50 +97,52 @@ export default function getVariableLookupMatches(
       break;
 
     case "ROUNDING":
-      // Offer rounding suggestions for nodes that have a single, non-figma.mixed cornerRadius
-      // and support individual corner radii suggestions
-      //
-      // Plugin API: "bottomLeftRadius", "bottomRightRadius", "topLeftRadius", "topRightRadius"
-      // REST API: Has four values in the "rectangleCornerRadii" array, as defined by:
-      // > Array of length 4 of the radius of each corner of the frame, starting in the top left and proceeding clockwise
-      //
+      {
+        // Offer rounding suggestions for nodes that have a single, non-figma.mixed cornerRadius
+        // and support individual corner radii suggestions
+        //
+        // Plugin API: "bottomLeftRadius", "bottomRightRadius", "topLeftRadius", "topRightRadius"
+        // REST API: Has four values in the "rectangleCornerRadii" array, as defined by:
+        // > Array of length 4 of the radius of each corner of the frame, starting in the top left and proceeding clockwise
+        //
 
-      // Calculate the node resolvedVariableModesMap once so we can reuse it for all matching
-      const resolvedVariableModesMap = calculateResolvedVariableModesMap(targetNode);
+        // Calculate the node resolvedVariableModesMap once so we can reuse it for all matching
+        const resolvedVariableModesMap = calculateResolvedVariableModesMap(targetNode);
 
-      const { cornerRadius } = targetNode as CornerMixin;
+        const { cornerRadius } = targetNode as CornerMixin;
 
-      if (cornerRadius && typeof cornerRadius === "number") {
-        variableMatches = roundingToVariableMap[cornerRadius];
-        if (variableMatches) {
-          addSuggestions(variableMatches, resolvedVariableModesMap, { corner: "all", cornerValue: cornerRadius });
-        }
-      } else {
-        CORNER_RADII.forEach((radii, index) => {
-          const variableSubscribedId = (targetNode as RectangleNode).boundVariables?.[radii]?.id;
-
-          const variable = variableSubscribedId
-            ? getVariableFromSubscribedId(variables, variableSubscribedId)
-            : undefined;
-
-          if (variable) {
-            // If the variable is bound, and it exists, we don't need suggestions for this radii
-            // console.log("Variable found for radii:", radii, variable);
-          } else {
-            // Plugin uses named properties, REST API uses an array of values in rectangleCornerRadii
-            const radiiValue =
-              (targetNode as RectangleNode)[radii] ?? (targetNode as any).rectangleCornerRadii?.[index];
-
-            const matchesForThisRadii = roundingToVariableMap[radiiValue];
-
-            if (matchesForThisRadii) {
-              addSuggestions(matchesForThisRadii, resolvedVariableModesMap, {
-                corner: radii,
-                cornerValue: radiiValue,
-              });
-            }
+        if (cornerRadius && typeof cornerRadius === "number") {
+          variableMatches = roundingToVariableMap[cornerRadius];
+          if (variableMatches) {
+            addSuggestions(variableMatches, resolvedVariableModesMap, { corner: "all", cornerValue: cornerRadius });
           }
-        });
+        } else {
+          CORNER_RADII.forEach((radii, index) => {
+            const variableSubscribedId = (targetNode as RectangleNode).boundVariables?.[radii]?.id;
+
+            const variable = variableSubscribedId
+              ? getVariableFromSubscribedId(variables, variableSubscribedId)
+              : undefined;
+
+            if (variable) {
+              // If the variable is bound, and it exists, we don't need suggestions for this radii
+              // console.log("Variable found for radii:", radii, variable);
+            } else {
+              // Plugin uses named properties, REST API uses an array of values in rectangleCornerRadii
+              const radiiValue =
+                (targetNode as RectangleNode)[radii] ?? (targetNode as any).rectangleCornerRadii?.[index];
+
+              const matchesForThisRadii = roundingToVariableMap[radiiValue];
+
+              if (matchesForThisRadii) {
+                addSuggestions(matchesForThisRadii, resolvedVariableModesMap, {
+                  corner: radii,
+                  cornerValue: radiiValue,
+                });
+              }
+            }
+          });
+        }
       }
       break;
 
