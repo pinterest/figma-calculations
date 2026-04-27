@@ -1,7 +1,5 @@
 const BASE_URL = "https://api.figma.com/v1";
 
-import axios from "axios";
-
 import {
   FigmaFile,
   FigmaImages,
@@ -21,6 +19,38 @@ import {
 } from "./models/figma";
 
 /**
+ * Helper function to make GET requests to the Figma API
+ */
+async function figmaGet<T>(
+  path: string,
+  params?: Record<string, string | number>
+): Promise<T> {
+  let url = `${BASE_URL}${path}`;
+  if (params) {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        searchParams.append(key, String(value));
+      }
+    });
+    url += `?${searchParams.toString()}`;
+  }
+
+  const resp = await fetch(url, {
+    method: "GET",
+    headers: {
+      "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
+    },
+  });
+
+  if (!resp.ok) {
+    throw new Error(`Figma API error: ${resp.status} ${resp.statusText}`);
+  }
+
+  return resp.json() as Promise<T>;
+}
+
+/**
  * Static class used to call the REST API
  */
 export class FigmaAPIHelper {
@@ -35,12 +65,9 @@ export class FigmaAPIHelper {
   ): Promise<FigmaProjectDetails[]> {
     let projects: FigmaProjectDetails[] = [];
     for (const teamId of teamIds) {
-      const resp = await axios.get<FigmaTeamProjectsResponse>(`${BASE_URL}/teams/${teamId}/projects`, {
-        headers: {
-          "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-        },
-      });
-      const data = resp.data;
+      const data = await figmaGet<FigmaTeamProjectsResponse>(
+        `/teams/${teamId}/projects`
+      );
       if (!data.err && data.projects) {
         projects = projects.concat(data);
       }
@@ -50,12 +77,7 @@ export class FigmaAPIHelper {
 
   static async getProjectFiles(projectId: string): Promise<FigmaPartialFile[]> {
     let files: FigmaPartialFile[] = [];
-    const resp = await axios.get(`${BASE_URL}/projects/${projectId}/files`, {
-      headers: {
-        "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-      },
-    });
-    const data = resp.data as any;
+    const data = await figmaGet<any>(`/projects/${projectId}/files`);
     if (!data.error && data.files) {
       files = files.concat(data.files as FigmaPartialFile[]);
     }
@@ -63,12 +85,7 @@ export class FigmaAPIHelper {
   }
 
   static async getFile(fileKey: string): Promise<FigmaFile> {
-    const resp = await axios.get(`${BASE_URL}/files/${fileKey}`, {
-      headers: {
-        "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-      },
-    });
-    const data = resp.data as FigmaFile;
+    const data = await figmaGet<FigmaFile>(`/files/${fileKey}`);
     return data;
   }
 
@@ -77,23 +94,13 @@ export class FigmaAPIHelper {
     imageIds: string[],
     format: 'jpg' | 'png' | 'svg' | 'pdf'
   ): Promise<FigmaImages> {
-    const resp = await axios.get(`${BASE_URL}/images/${fileKey}?format=${format}&ids=${imageIds.join(',')}`, {
-      headers: {
-        "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-      },
-    });
-    const data = resp.data as FigmaImages;
+    const data = await figmaGet<FigmaImages>(`/images/${fileKey}?format=${format}&ids=${imageIds.join(',')}`);
     return data;
   }
 
   static async getFileHistory(fileKey: string): Promise<FigmaVersion[]> {
-    const resp = await axios.get(`${BASE_URL}/files/${fileKey}/versions`, {
-      headers: {
-        "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-      },
-    });
-    const data = resp.data.versions as FigmaVersion[];
-    return data;
+    const data = await figmaGet<any>(`/files/${fileKey}/versions`);
+    return data.versions as FigmaVersion[];
   }
 
   static async getTeamComponentSets(
@@ -103,21 +110,12 @@ export class FigmaAPIHelper {
 
     let nextCursor = undefined;
 
-    do {
-      const resp = await axios.get(
-        `${BASE_URL}/teams/${teamId}/component_sets`,
-        {
-          headers: {
-            "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-          },
-          params: {
-            after: nextCursor,
-            page_size: 10000,
-          },
-        }
-      );
+    while (true) {
+      const data: any = await figmaGet<any>(`/teams/${teamId}/component_sets`, {
+        after: nextCursor,
+        page_size: 10000,
+      });
 
-      const data = resp.data as any;
       const metadata = data.meta;
 
       nextCursor = metadata.cursor?.after;
@@ -127,7 +125,9 @@ export class FigmaAPIHelper {
           metadata.component_sets as FigmaTeamComponent[]
         );
       }
-    } while (nextCursor);
+
+      if (!nextCursor) break;
+    }
 
     return components;
   }
@@ -139,18 +139,12 @@ export class FigmaAPIHelper {
 
     let nextCursor = undefined;
 
-    do {
-      const resp = await axios.get(`${BASE_URL}/teams/${teamId}/components`, {
-        headers: {
-          "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-        },
-        params: {
-          after: nextCursor,
-          page_size: 10000,
-        },
+    while (true) {
+      const data: any = await figmaGet<any>(`/teams/${teamId}/components`, {
+        after: nextCursor,
+        page_size: 10000,
       });
 
-      const data = resp.data as any;
       const metadata = data.meta;
 
       nextCursor = metadata.cursor?.after;
@@ -160,7 +154,9 @@ export class FigmaAPIHelper {
           metadata.components as FigmaTeamComponent[]
         );
       }
-    } while (nextCursor);
+
+      if (!nextCursor) break;
+    }
 
     return components;
   }
@@ -170,18 +166,12 @@ export class FigmaAPIHelper {
 
     let nextCursor = undefined;
 
-    do {
-      const resp = await axios.get(`${BASE_URL}/teams/${teamId}/styles`, {
-        headers: {
-          "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-        },
-        params: {
-          after: nextCursor,
-          page_size: 10000,
-        },
+    while (true) {
+      const data: any = await figmaGet<any>(`/teams/${teamId}/styles`, {
+        after: nextCursor,
+        page_size: 10000,
       });
 
-      const data = resp.data as any;
       const metadata = data.meta;
 
       nextCursor = metadata.cursor?.after;
@@ -189,7 +179,9 @@ export class FigmaAPIHelper {
       if (!data.error && metadata.styles) {
         styles = styles.concat(metadata.styles as FigmaTeamStyle[]);
       }
-    } while (nextCursor);
+
+      if (!nextCursor) break;
+    }
 
     const extendedStyles: FigmaTeamStyle[] = [];
 
@@ -213,16 +205,9 @@ export class FigmaAPIHelper {
   static async getFileComponents(fileKeys: string[]): Promise<FigmaTeamComponent[]> {
     let components: FigmaTeamComponent[] = [];
     for (const fileId of fileKeys) {
-      const resp = await axios.get(`${BASE_URL}/files/${fileId}/components`, {
-        headers: {
-          "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-        },
-      });
-      const data = resp.data as any;
+      const data = await figmaGet<any>(`/files/${fileId}/components`);
       if (!data.error && data.meta.components) {
-        components = components.concat(
-          data.meta.components as FigmaTeamComponent[]
-        );
+        components = components.concat(data.meta.components as FigmaTeamComponent[]);
       }
     }
     return components;
@@ -231,16 +216,9 @@ export class FigmaAPIHelper {
   static async getFileComponentSets(fileKeys: string[]): Promise<FigmaTeamComponent[]> {
     let componentSets: FigmaTeamComponent[] = [];
     for (const fileId of fileKeys) {
-      const resp = await axios.get(`${BASE_URL}/files/${fileId}/component_sets`, {
-        headers: {
-          "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-        },
-      });
-      const data = resp.data as any;
+      const data = await figmaGet<any>(`/files/${fileId}/component_sets`);
       if (!data.error && data.meta.component_sets) {
-        componentSets = componentSets.concat(
-          data.meta.component_sets as FigmaTeamComponent[]
-        );
+        componentSets = componentSets.concat(data.meta.component_sets as FigmaTeamComponent[]);
       }
     }
     return componentSets;
@@ -249,12 +227,7 @@ export class FigmaAPIHelper {
   static async getFileStyles(fileKeys: string[]): Promise<FigmaTeamStyle[]> {
     let styles: FigmaTeamStyle[] = [];
     for (const fileId of fileKeys) {
-      const resp = await axios.get<FigmaFileStylesResponse>(`${BASE_URL}/files/${fileId}/styles`, {
-        headers: {
-          "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-        },
-      });
-      const data = resp.data;
+      const data = await figmaGet<FigmaFileStylesResponse>(`/files/${fileId}/styles`);
       if (!data.err && data.meta.styles) {
         styles = styles.concat(data.meta.styles);
       }
@@ -282,32 +255,28 @@ export class FigmaAPIHelper {
     variables: Record<string, FigmaLocalVariable>;
     variableCollections: Record<string, FigmaLocalVariableCollection>;
   }> {
-    const resp = await axios.get<FigmaVariablesLocalResponse>(`${BASE_URL}/files/${fileKey}/variables/local`, {
-      headers: {
-        "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-      },
-    });
+    const resp = await figmaGet<FigmaVariablesLocalResponse>(
+      `/files/${fileKey}/variables/local`
+    );
 
     return {
-      variables: resp.data.meta?.variables,
-      variableCollections: resp.data.meta?.variableCollections,
-    }
+      variables: resp.meta?.variables,
+      variableCollections: resp.meta?.variableCollections,
+    };
   }
 
   static async getFilePublishedVariables(fileKey: string): Promise<{
     variables: Record<string, FigmaPublishedVariable>;
     variableCollections: Record<string, FigmaPublishedVariableCollection>;
   }> {
-    const resp = await axios.get<FigmaVariablesPublishedResponse>(`${BASE_URL}/files/${fileKey}/variables/published`, {
-      headers: {
-        "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-      },
-    });
+    const resp = await figmaGet<FigmaVariablesPublishedResponse>(
+      `/files/${fileKey}/variables/published`
+    );
 
     return {
-      variables: resp.data.meta?.variables,
-      variableCollections: resp.data.meta?.variableCollections,
-    }
+      variables: resp.meta?.variables,
+      variableCollections: resp.meta?.variableCollections,
+    };
   }
 
   static async getNodeDetails(fileKey: string, nodeIds: string[]) {
@@ -321,14 +290,9 @@ export class FigmaAPIHelper {
 
     // Map each chunk to a request
     const requests = chunks.map(chunk =>
-      axios.get(`${BASE_URL}/files/${fileKey}/nodes`, {
-        headers: {
-          "X-FIGMA-TOKEN": FigmaAPIHelper.API_TOKEN,
-        },
-        params: {
-          ids: chunk.join(","),
-          depth: 1, // This method is only used to populate styles currently, and those don't have children
-        },
+      figmaGet<any>(`/files/${fileKey}/nodes`, {
+        ids: chunk.join(","),
+        depth: 1, // This method is only used to populate styles currently, and those don't have children
       })
     );
 
@@ -336,8 +300,7 @@ export class FigmaAPIHelper {
     const responses = await Promise.all(requests);
     let mergedNodes: { [key: string]: any } = {};
     responses.forEach(resp => {
-      const data = resp.data as { nodes: { [key: string]: any } };
-      mergedNodes = { ...mergedNodes, ...data.nodes };
+      mergedNodes = { ...mergedNodes, ...resp.nodes };
     });
 
     return { nodes: mergedNodes };
